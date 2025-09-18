@@ -1,5 +1,9 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Note: This app uses Firebase for all data operations
+// The apiRequest and getQueryFn functions are not currently used
+// but are kept for potential future API integration
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
