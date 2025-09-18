@@ -12,7 +12,7 @@ import MatchResultModal from "./MatchResultModal";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
-  const { requestMatch, acceptMatch, rejectMatch } = useFirestore();
+  const { requestMatch, acceptMatch, rejectMatch, deleteDocument } = useFirestore();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('player-tab');
   const [mainHeader, setMainHeader] = useState('매치 찾기');
@@ -118,6 +118,39 @@ export default function MainApp() {
       console.error("Reject match error:", error);
       toast({
         title: "매치 거절 실패",
+        description: error.message || "다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeletePost = async (postId: string, authorId: string) => {
+    if (!appUser) return;
+    
+    // Check if current user is the author
+    if (appUser.id !== authorId) {
+      toast({
+        title: "삭제 권한 없음",
+        description: "본인이 작성한 글만 삭제할 수 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await deleteDocument('posts', postId);
+      toast({
+        title: "게시글 삭제 완료",
+        description: "게시글이 성공적으로 삭제되었습니다.",
+      });
+    } catch (error: any) {
+      console.error("Delete post error:", error);
+      toast({
+        title: "게시글 삭제 실패",
         description: error.message || "다시 시도해주세요.",
         variant: "destructive",
       });
@@ -489,10 +522,13 @@ export default function MainApp() {
                             })}
                           </p>
                         </div>
-                        {post.authorId === appUser?.id && (
-                          <button 
-                            className="text-muted-foreground hover:text-destructive transition-colors"
+                        {/* Delete button for post author */}
+                        {appUser?.id === post.authorId && (
+                          <button
+                            onClick={() => handleDeletePost(post.id, post.authorId)}
+                            className="text-red-500 hover:text-red-700 p-2 rounded-full hover:bg-red-50 transition-colors"
                             data-testid={`button-delete-post-${post.id}`}
+                            title="게시글 삭제"
                           >
                             <i className="fas fa-trash text-sm" />
                           </button>
