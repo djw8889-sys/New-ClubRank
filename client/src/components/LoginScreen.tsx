@@ -1,14 +1,36 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
+    setLoading(true);
     try {
       await signInWithGoogle();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
+      
+      // Show user-friendly error message
+      let errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
+      
+      if (error?.code === 'auth/unauthorized-domain') {
+        errorMessage = "현재 도메인이 승인되지 않았습니다. 관리자에게 문의하세요.";
+      } else if (error?.code === 'auth/popup-blocked') {
+        errorMessage = "팝업이 차단되었습니다. 브라우저 설정을 확인해주세요.";
+      }
+      
+      toast({
+        title: "로그인 실패",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -51,6 +73,7 @@ export default function LoginScreen() {
         <div className="space-y-3">
           <Button 
             onClick={handleGoogleLogin}
+            disabled={loading}
             className="w-full bg-white border-2 border-border text-foreground font-semibold py-4 rounded-xl flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-[1.02]"
             data-testid="button-google-login"
           >

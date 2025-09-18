@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       console.error("Google sign-in error:", error);
+      // Re-throw error so UI can handle it
+      throw error;
     }
   };
 
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAppUser(prev => prev ? { ...prev, ...userData } : null);
     } catch (error) {
       console.error("Update user error:", error);
+      throw error; // Re-throw so calling code can handle it
     }
   };
 

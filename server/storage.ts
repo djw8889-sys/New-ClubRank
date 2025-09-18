@@ -18,36 +18,51 @@ export class MemStorage implements IStorage {
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    try {
+      return this.users.get(id);
+    } catch (error) {
+      console.error('Error getting user:', error);
+      throw new Error('Failed to get user');
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    try {
+      return Array.from(this.users.values()).find(
+        (user) => user.username === username,
+      );
+    } catch (error) {
+      console.error('Error getting user by username:', error);
+      throw new Error('Failed to get user by username');
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const now = new Date();
-    const user: User = { 
-      id,
-      email: insertUser.email,
-      username: insertUser.username,
-      photoURL: insertUser.photoURL || null,
-      ntrp: insertUser.ntrp,
-      region: insertUser.region,
-      age: insertUser.age,
-      bio: insertUser.bio || null,
-      availableTimes: insertUser.availableTimes,
-      points: 100,
-      wins: 0,
-      losses: 0,
-      createdAt: now,
-      updatedAt: now
-    };
-    this.users.set(id, user);
-    return user;
+    try {
+      const id = randomUUID();
+      const now = new Date();
+      const user: User = { 
+        id,
+        email: insertUser.email,
+        username: insertUser.username,
+        photoURL: insertUser.photoURL || null,
+        ntrp: insertUser.ntrp,
+        region: insertUser.region,
+        age: insertUser.age,
+        bio: insertUser.bio || null,
+        availableTimes: Array.isArray(insertUser.availableTimes) ? insertUser.availableTimes as string[] : [],
+        points: 100,
+        wins: 0,
+        losses: 0,
+        createdAt: now,
+        updatedAt: now
+      };
+      this.users.set(id, user);
+      return user;
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new Error('Failed to create user');
+    }
   }
 }
 
