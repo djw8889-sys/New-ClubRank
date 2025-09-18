@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, userData, { merge: true });
-      setAppUser(prev => prev ? { ...prev, ...userData } : null);
+      setAppUser(prev => prev ? { ...prev, ...userData } as AppUser : userData as AppUser);
     } catch (error) {
       console.error("Update user error:", error);
       throw error; // Re-throw so calling code can handle it

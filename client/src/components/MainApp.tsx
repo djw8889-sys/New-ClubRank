@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useFirestoreCollection, useFirestore } from "@/hooks/use-firebase";
-import { User } from "@shared/schema";
+import { User, Post } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import PlayerCard from "./PlayerCard";
 import BottomNavigation from "./BottomNavigation";
 import LoadingSpinner from "./LoadingSpinner";
+import PostCreateModal from "./PostCreateModal";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -13,6 +14,7 @@ export default function MainApp() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('player-tab');
   const [mainHeader, setMainHeader] = useState('매치 찾기');
+  const [showPostModal, setShowPostModal] = useState(false);
 
   // Fetch other players (excluding current user)
   const { 
@@ -21,6 +23,18 @@ export default function MainApp() {
   } = useFirestoreCollection<User>('users', [
     { field: 'id', operator: '!=', value: appUser?.id || '' }
   ]);
+
+  // Fetch ranking data (all users sorted by points)
+  const {
+    data: rankingUsers,
+    loading: rankingLoading
+  } = useFirestoreCollection<User>('users', [], 'points', 'desc');
+
+  // Fetch community posts
+  const {
+    data: posts,
+    loading: postsLoading
+  } = useFirestoreCollection<Post>('posts', [], 'createdAt', 'desc');
 
   const handleTabChange = (tab: string, header: string) => {
     setActiveTab(tab);
@@ -56,6 +70,22 @@ export default function MainApp() {
     if (confirm('로그아웃 하시겠습니까?')) {
       await logout();
     }
+  };
+
+  const handleNewPost = () => {
+    setShowPostModal(true);
+  };
+
+  const handleClosePostModal = () => {
+    setShowPostModal(false);
+  };
+
+  const handlePostCreated = () => {
+    // Firestore의 realtime listener가 자동으로 UI를 업데이트함
+    toast({
+      title: "게시글이 추가되었습니다",
+      description: "커뮤니티에서 확인해보세요!",
+    });
   };
 
   if (!appUser) {
@@ -179,24 +209,151 @@ export default function MainApp() {
             </div>
           </div>
           <div className="p-4">
-            <p className="text-center text-muted-foreground" data-testid="text-no-rankings">
-              랭킹 데이터를 불러오는 중...
-            </p>
+            {rankingLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : rankingUsers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8" data-testid="text-no-rankings">
+                랭킹 데이터가 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {rankingUsers.map((user, index) => (
+                  <div 
+                    key={user.id}
+                    className={`flex items-center p-4 rounded-xl border transition-colors ${
+                      user.id === appUser?.id 
+                        ? 'bg-primary/10 border-primary' 
+                        : 'bg-background border-border hover:bg-muted'
+                    }`}
+                    data-testid={`ranking-item-${index + 1}`}
+                  >
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        index === 0 ? 'bg-yellow-500 text-white' :
+                        index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-amber-600 text-white' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {index + 1}
+                      </div>
+                      <img 
+                        src={user.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                        alt={user.username} 
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground" data-testid={`text-rank-username-${index + 1}`}>
+                          {user.username}
+                          {user.id === appUser?.id && <span className="ml-2 text-xs text-primary font-bold">(나)</span>}
+                        </p>
+                        <p className="text-sm text-muted-foreground">NTRP {user.ntrp} • {user.region}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-accent" data-testid={`text-rank-points-${index + 1}`}>{user.points}P</p>
+                        <p className="text-xs text-muted-foreground">{user.wins}승 {user.losses}패</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Community Tab */}
         <div className={`tab-content ${activeTab === 'community-tab' ? 'active' : 'hidden'}`}>
           <div className="p-4 border-b border-border bg-background">
-            <button className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-xl hover:bg-primary/90 transition-colors" data-testid="button-new-post">
+            <button 
+              onClick={handleNewPost}
+              className="w-full bg-primary text-primary-foreground font-semibold py-3 rounded-xl hover:bg-primary/90 transition-colors" 
+              data-testid="button-new-post"
+            >
               <i className="fas fa-pen mr-2" />
               새 글 작성하기
             </button>
           </div>
           <div className="p-4">
-            <p className="text-center text-muted-foreground" data-testid="text-no-posts">
-              커뮤니티 게시글이 없습니다.
-            </p>
+            {postsLoading ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="lg" />
+              </div>
+            ) : posts.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8" data-testid="text-no-posts">
+                아직 커뮤니티 게시글이 없습니다.<br />
+                첫 번째 게시글을 작성해보세요!
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post) => {
+                  // 작성자 정보 찾기
+                  const author = rankingUsers.find(user => user.id === post.authorId) || 
+                    players.find(user => user.id === post.authorId) ||
+                    (post.authorId === appUser?.id ? appUser : null);
+                  
+                  return (
+                    <div 
+                      key={post.id}
+                      className="bg-background rounded-xl p-4 border border-border hover:bg-muted transition-colors"
+                      data-testid={`post-${post.id}`}
+                    >
+                      {/* Post Header */}
+                      <div className="flex items-center space-x-3 mb-3">
+                        <img 
+                          src={author?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                          alt={author?.username || "Unknown"} 
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-foreground" data-testid={`text-post-author-${post.id}`}>
+                            {author?.username || "Unknown User"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {post.createdAt && new Date(post.createdAt).toLocaleDateString('ko-KR', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
+                        {post.authorId === appUser?.id && (
+                          <button 
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            data-testid={`button-delete-post-${post.id}`}
+                          >
+                            <i className="fas fa-trash text-sm" />
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Post Content */}
+                      <div className="mb-3">
+                        <h3 className="font-bold text-foreground mb-2" data-testid={`text-post-title-${post.id}`}>
+                          {post.title}
+                        </h3>
+                        <p className="text-foreground whitespace-pre-wrap" data-testid={`text-post-content-${post.id}`}>
+                          {post.content}
+                        </p>
+                      </div>
+                      
+                      {/* Post Actions */}
+                      <div className="flex items-center space-x-4 pt-2 border-t border-border">
+                        <button className="flex items-center space-x-1 text-muted-foreground hover:text-red-500 transition-colors">
+                          <i className="far fa-heart" />
+                          <span className="text-sm" data-testid={`text-post-likes-${post.id}`}>{post.likes || 0}</span>
+                        </button>
+                        <button className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors">
+                          <i className="far fa-comment" />
+                          <span className="text-sm">댓글</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
@@ -294,6 +451,13 @@ export default function MainApp() {
       </main>
 
       <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+      
+      {/* Post Creation Modal */}
+      <PostCreateModal
+        isOpen={showPostModal}
+        onClose={handleClosePostModal}
+        onPostCreated={handlePostCreated}
+      />
     </div>
   );
 }
