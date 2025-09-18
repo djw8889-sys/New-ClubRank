@@ -11,7 +11,8 @@ import {
   getDocs,
   DocumentData,
   QuerySnapshot,
-  serverTimestamp
+  serverTimestamp,
+  Timestamp
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -41,10 +42,20 @@ export function useFirestoreCollection<T>(
 
       const unsubscribe = onSnapshot(q, 
         (snapshot: QuerySnapshot<DocumentData>) => {
-          const documents = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as T[];
+          const documents = snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Normalize Firestore Timestamps to JavaScript Dates
+            const normalizedData = { ...data };
+            Object.keys(normalizedData).forEach(key => {
+              if (normalizedData[key] instanceof Timestamp) {
+                normalizedData[key] = normalizedData[key].toDate();
+              }
+            });
+            return {
+              id: doc.id,
+              ...normalizedData
+            };
+          }) as T[];
           setData(documents);
           setLoading(false);
         },
