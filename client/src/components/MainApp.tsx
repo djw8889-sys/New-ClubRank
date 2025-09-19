@@ -9,6 +9,7 @@ import BottomNavigation from "./BottomNavigation";
 import LoadingSpinner from "./LoadingSpinner";
 import PostCreateModal from "./PostCreateModal";
 import MatchResultModal from "./MatchResultModal";
+import MatchRequestModal from "./MatchRequestModal";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -18,7 +19,10 @@ export default function MainApp() {
   const [mainHeader, setMainHeader] = useState('매치 찾기');
   const [showPostModal, setShowPostModal] = useState(false);
   const [showMatchResultModal, setShowMatchResultModal] = useState(false);
+  const [showMatchRequestModal, setShowMatchRequestModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<User | null>(null);
+  const [isMatchRequesting, setIsMatchRequesting] = useState(false);
 
   // Fetch other players (excluding current user)
   const { 
@@ -67,15 +71,28 @@ export default function MainApp() {
   };
 
   const handleMatchRequest = async (targetId: string) => {
-    if (!appUser) return;
+    const targetPlayer = players.find(p => p.id === targetId);
+    if (!targetPlayer) return;
+    
+    setSelectedPlayer(targetPlayer);
+    setShowMatchRequestModal(true);
+  };
+
+  const handleConfirmMatchRequest = async () => {
+    if (!appUser || !selectedPlayer) return;
+    
+    setIsMatchRequesting(true);
 
     try {
-      await requestMatch(appUser.id, targetId, 50);
+      await requestMatch(appUser.id, selectedPlayer.id, 50);
 
       toast({
         title: "매칭 신청 완료",
-        description: "상대방의 응답을 기다리고 있습니다. (50P 차감)",
+        description: `${selectedPlayer.username}님에게 매치를 신청했습니다. (50P 차감)`,
       });
+      
+      setShowMatchRequestModal(false);
+      setSelectedPlayer(null);
     } catch (error: any) {
       console.error("Match request error:", error);
       toast({
@@ -83,6 +100,8 @@ export default function MainApp() {
         description: error.message || "다시 시도해주세요.",
         variant: "destructive",
       });
+    } finally {
+      setIsMatchRequesting(false);
     }
   };
 
@@ -274,8 +293,9 @@ export default function MainApp() {
           {/* Player Cards */}
           <div className="p-4 space-y-4">
             {playersLoading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <LoadingSpinner size="lg" />
+                <p className="text-muted-foreground text-sm">플레이어 목록을 불러오는 중...</p>
               </div>
             ) : players.length === 0 ? (
               <p className="text-center text-muted-foreground py-8" data-testid="text-no-players">
@@ -296,8 +316,9 @@ export default function MainApp() {
         {/* Chat List Tab - Now showing matches */}
         <div className={`tab-content ${activeTab === 'chat-list-tab' ? 'active' : 'hidden'}`}>
           {matchesLoading ? (
-            <div className="flex justify-center py-8">
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
               <LoadingSpinner size="lg" />
+              <p className="text-muted-foreground text-sm">매치 목록을 불러오는 중...</p>
             </div>
           ) : allMatches.length === 0 ? (
             <p className="text-center text-muted-foreground pt-10" data-testid="text-no-matches">
@@ -414,8 +435,9 @@ export default function MainApp() {
           </div>
           <div className="p-4">
             {rankingLoading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <LoadingSpinner size="lg" />
+                <p className="text-muted-foreground text-sm">랭킹 정보를 불러오는 중...</p>
               </div>
             ) : rankingUsers.length === 0 ? (
               <p className="text-center text-muted-foreground py-8" data-testid="text-no-rankings">
@@ -480,8 +502,9 @@ export default function MainApp() {
           </div>
           <div className="p-4">
             {postsLoading ? (
-              <div className="flex justify-center py-8">
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <LoadingSpinner size="lg" />
+                <p className="text-muted-foreground text-sm">커뮤니티 게시글을 불러오는 중...</p>
               </div>
             ) : posts.length === 0 ? (
               <p className="text-center text-muted-foreground py-8" data-testid="text-no-posts">
@@ -676,6 +699,20 @@ export default function MainApp() {
           (rankingUsers.find(u => u.id === (selectedMatch.requesterId === appUser?.id ? selectedMatch.targetId : selectedMatch.requesterId)) || 
            players.find(u => u.id === (selectedMatch.requesterId === appUser?.id ? selectedMatch.targetId : selectedMatch.requesterId)) || null) : null
         }
+      />
+
+      {/* Match Request Modal */}
+      <MatchRequestModal
+        isOpen={showMatchRequestModal}
+        onClose={() => {
+          setShowMatchRequestModal(false);
+          setSelectedPlayer(null);
+          setIsMatchRequesting(false);
+        }}
+        onConfirm={handleConfirmMatchRequest}
+        targetUser={selectedPlayer}
+        currentUserPoints={appUser?.points || 0}
+        isLoading={isMatchRequesting}
       />
     </div>
   );
