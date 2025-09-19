@@ -167,7 +167,7 @@ export default function MatchResultModal({
               <p>🏆 승리: +25 포인트 보너스, +1승</p>
               <p>😔 패배: +1패 (포인트 환급 없음)</p>
               <p>🤝 무승부: +25 포인트 환급</p>
-              <p className="text-muted-foreground/80">※ 매치 참가비 50P는 이미 차감됨</p>
+              <p className="text-muted-foreground/80">※ 테스트 버전으로 매치 참가비 무료</p>
             </div>
           </div>
         </div>

@@ -17,6 +17,10 @@ import AdminPanel from "./AdminPanel";
 import AdminPromotion from "./AdminPromotion";
 import FeedbackModal from "./FeedbackModal";
 import MatchPointLogo from "./MatchPointLogo";
+import ProfileEditModal from "./ProfileEditModal";
+import MatchHistoryModal from "./MatchHistoryModal";
+import PointChargeModal from "./PointChargeModal";
+import ShopModal from "./ShopModal";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -35,6 +39,10 @@ export default function MainApp() {
   const [isMatchRequesting, setIsMatchRequesting] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showProfileEditModal, setShowProfileEditModal] = useState(false);
+  const [showMatchHistoryModal, setShowMatchHistoryModal] = useState(false);
+  const [showPointChargeModal, setShowPointChargeModal] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
 
   // Fetch other players (excluding current user)
   const { 
@@ -100,7 +108,7 @@ export default function MainApp() {
 
       toast({
         title: "매칭 신청 완료",
-        description: `${selectedPlayer.username}님에게 매치를 신청했습니다. (50P 차감)`,
+        description: `${selectedPlayer.username}님에게 매치를 신청했습니다. (테스트 버전 - 무료)`,
       });
       
       setShowMatchRequestModal(false);
@@ -124,7 +132,7 @@ export default function MainApp() {
       await acceptMatch(matchId);
       toast({
         title: "매치 수락 완료",
-        description: "경기 준비가 완료되었습니다! (50P 차감)",
+        description: "경기 준비가 완료되었습니다! (테스트 버전 - 무료)",
       });
     } catch (error: any) {
       console.error("Accept match error:", error);
@@ -143,7 +151,7 @@ export default function MainApp() {
       await rejectMatch(matchId);
       toast({
         title: "매치 거절 완료",
-        description: "매치 요청을 거절했습니다. (상대방에게 50P 환급)",
+        description: "매치 요청을 거절했습니다. (테스트 버전 - 무료)",
       });
     } catch (error: any) {
       console.error("Reject match error:", error);
@@ -245,8 +253,8 @@ export default function MainApp() {
         points: 0,
         wins: 0,
         losses: 0,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        createdAt: new Date('2025-01-01'),
+        updatedAt: new Date('2025-01-01')
       };
     }
     
@@ -282,6 +290,14 @@ export default function MainApp() {
             <span className="premium-badge">PREMIUM</span>
           </div>
           <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => setShowShopModal(true)}
+              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors" 
+              data-testid="button-shop"
+            >
+              <i className="fas fa-store text-lg" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            </button>
             <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors" data-testid="button-notifications">
               <i className="fas fa-bell text-lg" />
               <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full" />
@@ -704,7 +720,11 @@ export default function MainApp() {
 
           {/* Menu Items */}
           <div className="p-4 space-y-2">
-            <button className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" data-testid="button-edit-profile">
+            <button 
+              onClick={() => setShowProfileEditModal(true)}
+              className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" 
+              data-testid="button-edit-profile"
+            >
               <span className="flex items-center">
                 <i className="fas fa-user-edit w-6 mr-3 text-primary" />
                 프로필 수정
@@ -712,7 +732,11 @@ export default function MainApp() {
               <i className="fas fa-chevron-right text-muted-foreground" />
             </button>
             
-            <button className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" data-testid="button-match-history">
+            <button 
+              onClick={() => setShowMatchHistoryModal(true)}
+              className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" 
+              data-testid="button-match-history"
+            >
               <span className="flex items-center">
                 <i className="fas fa-history w-6 mr-3 text-green-600" />
                 경기 기록
@@ -720,7 +744,11 @@ export default function MainApp() {
               <i className="fas fa-chevron-right text-muted-foreground" />
             </button>
             
-            <button className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" data-testid="button-charge-points">
+            <button 
+              onClick={() => setShowPointChargeModal(true)}
+              className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" 
+              data-testid="button-charge-points"
+            >
               <span className="flex items-center">
                 <i className="fas fa-coins w-6 mr-3 text-accent" />
                 포인트 충전
@@ -844,6 +872,27 @@ export default function MainApp() {
       <FeedbackModal
         isOpen={showFeedbackModal}
         onClose={() => setShowFeedbackModal(false)}
+      />
+
+      {/* Profile Modals */}
+      <ProfileEditModal 
+        isOpen={showProfileEditModal} 
+        onClose={() => setShowProfileEditModal(false)} 
+      />
+
+      <MatchHistoryModal 
+        isOpen={showMatchHistoryModal} 
+        onClose={() => setShowMatchHistoryModal(false)} 
+      />
+
+      <PointChargeModal 
+        isOpen={showPointChargeModal} 
+        onClose={() => setShowPointChargeModal(false)} 
+      />
+
+      <ShopModal 
+        isOpen={showShopModal} 
+        onClose={() => setShowShopModal(false)} 
       />
     </div>
   );

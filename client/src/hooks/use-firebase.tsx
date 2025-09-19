@@ -153,18 +153,20 @@ export function useFirestore() {
         
         if (!targetUserDoc.exists()) throw new Error("Target user not found");
         
-        const targetUser = targetUserDoc.data();
-        if (targetUser.points < match.pointsCost) throw new Error("Insufficient points");
+        // Test version: No point requirements
+        // const targetUser = targetUserDoc.data();
+        // if (targetUser.points < match.pointsCost) throw new Error("Insufficient points");
         
-        // Accept match and deduct points from target
+        // Accept match - no points deducted in test version
         transaction.update(matchRef, {
           status: 'accepted',
           acceptedAt: serverTimestamp(),
         });
         
-        transaction.update(targetUserRef, {
-          points: increment(-match.pointsCost),
-        });
+        // Test version: No point deduction
+        // transaction.update(targetUserRef, {
+        //   points: increment(-match.pointsCost),
+        // });
       });
     } catch (error) {
       console.error("Error accepting match:", error);
@@ -194,11 +196,11 @@ export function useFirestore() {
           rejectedAt: serverTimestamp(),
         });
         
-        // Refund requester's points
-        const requesterRef = doc(db, 'users', match.requesterId);
-        transaction.update(requesterRef, {
-          points: increment(match.pointsCost), // Refund the original cost
-        });
+        // Test version: No points were deducted, so no refund needed
+        // const requesterRef = doc(db, 'users', match.requesterId);
+        // transaction.update(requesterRef, {
+        //   points: increment(match.pointsCost), // Refund the original cost
+        // });
       });
     } catch (error) {
       console.error("Error rejecting match:", error);
@@ -242,7 +244,7 @@ export function useFirestore() {
         if (result === 'requester_won') {
           // Winner gets full refund + bonus points + 1 win
           transaction.update(requesterRef, {
-            points: increment(75), // 50 refund + 25 bonus = net +25P
+            points: increment(25), // Test version: just +25P bonus
             wins: increment(1),
           });
           // Loser gets +1 loss
@@ -252,7 +254,7 @@ export function useFirestore() {
         } else if (result === 'target_won') {
           // Winner gets full refund + bonus points + 1 win
           transaction.update(targetRef, {
-            points: increment(75), // 50 refund + 25 bonus = net +25P
+            points: increment(25), // Test version: just +25P bonus
             wins: increment(1),
           });
           // Loser gets +1 loss
@@ -287,7 +289,7 @@ export function useFirestore() {
     completeMatch,
   };
 
-  async function requestMatch(requesterId: string, targetId: string, pointsCost: number = 50) {
+  async function requestMatch(requesterId: string, targetId: string, pointsCost: number = 0) {
     if (!user) throw new Error("User not authenticated");
     if (user.uid !== requesterId) throw new Error("Unauthorized: Only requester can create match");
 
@@ -298,23 +300,21 @@ export function useFirestore() {
         
         if (!requesterDoc.exists()) throw new Error("Requester not found");
         
-        const requesterData = requesterDoc.data();
-        if (requesterData.points < pointsCost) throw new Error("Insufficient points");
-        
-        // Create match and deduct points atomically
+        // Test version: No points required or deducted
         const matchRef = doc(collection(db, 'matches'));
         transaction.set(matchRef, {
           id: matchRef.id,
           requesterId,
           targetId,
           status: 'pending',
-          pointsCost,
+          pointsCost: 0, // Test version: free matches
           createdAt: serverTimestamp(),
         });
         
-        transaction.update(requesterRef, {
-          points: increment(-pointsCost),
-        });
+        // Test version: No point deduction
+        // transaction.update(requesterRef, {
+        //   points: increment(-pointsCost),
+        // });
       });
     } catch (error) {
       console.error("Error requesting match:", error);

@@ -12,21 +12,21 @@ export interface TierInfo {
 
 export const TIERS: TierInfo[] = [
   {
-    name: '브론즈',
+    name: '🥉 브론즈',
     color: 'text-orange-700',
     bgColor: 'bg-orange-100',
     minPoints: 0,
     minGames: 0
   },
   {
-    name: '실버',
+    name: '🥈 실버',
     color: 'text-gray-600',
     bgColor: 'bg-gray-100',
     minPoints: 150,
     minGames: 3
   },
   {
-    name: '골드',
+    name: '🥇 골드',
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-100',
     minPoints: 250,
@@ -34,7 +34,7 @@ export const TIERS: TierInfo[] = [
     minWinRate: 0.4
   },
   {
-    name: '플래티넘',
+    name: '💎 플래티넘',
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
     minPoints: 400,
@@ -42,7 +42,7 @@ export const TIERS: TierInfo[] = [
     minWinRate: 0.5
   },
   {
-    name: '다이아몬드',
+    name: '💎 다이아몬드',
     color: 'text-cyan-600',
     bgColor: 'bg-cyan-100',
     minPoints: 600,
@@ -50,7 +50,7 @@ export const TIERS: TierInfo[] = [
     minWinRate: 0.6
   },
   {
-    name: '마스터',
+    name: '👑 마스터',
     color: 'text-purple-600',
     bgColor: 'bg-purple-100',
     minPoints: 900,
@@ -58,7 +58,7 @@ export const TIERS: TierInfo[] = [
     minWinRate: 0.65
   },
   {
-    name: '챔피언',
+    name: '🏆 챔피언',
     color: 'text-red-600',
     bgColor: 'bg-red-100',
     minPoints: 1500,

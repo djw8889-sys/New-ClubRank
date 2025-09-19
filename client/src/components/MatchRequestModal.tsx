@@ -20,7 +20,7 @@ export default function MatchRequestModal({
   currentUserPoints,
   isLoading
 }: MatchRequestModalProps) {
-  const matchCost = 50;
+  const matchCost = 0; // Test version: free matches
   const hasEnoughPoints = currentUserPoints >= matchCost;
 
   return (
@@ -69,8 +69,8 @@ export default function MatchRequestModal({
           <div className="space-y-2 p-3 border rounded-lg">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">매치 신청 비용</span>
-              <span className="font-semibold text-destructive" data-testid="text-match-cost">
-                {matchCost}P
+              <span className="font-semibold text-green-600" data-testid="text-match-cost">
+                무료 (테스트 버전)
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -101,10 +101,10 @@ export default function MatchRequestModal({
 
           {/* Info about match flow */}
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>• 매치 신청 시 즉시 {matchCost}P가 차감됩니다</p>
-            <p>• 상대방이 수락하면 상대방도 {matchCost}P가 차감됩니다</p>
-            <p>• 승리 시 +25P 보너스, 무승부 시 각자 +25P 환급</p>
-            <p>• 상대방이 거절하면 신청 비용이 환급됩니다</p>
+            <p>• 테스트 버전으로 매치 신청이 무료입니다</p>
+            <p>• 상대방이 수락해도 포인트가 차감되지 않습니다</p>
+            <p>• 승리 시 +25P 보너스를 받을 수 있습니다</p>
+            <p>• 무승부 시 각자 +25P를 받습니다</p>
           </div>
         </div>
 
