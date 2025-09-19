@@ -10,6 +10,7 @@ import LoadingSpinner from "./LoadingSpinner";
 import PostCreateModal from "./PostCreateModal";
 import MatchResultModal from "./MatchResultModal";
 import MatchRequestModal from "./MatchRequestModal";
+import ChatScreen from "./ChatScreen";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -20,8 +21,11 @@ export default function MainApp() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [showMatchResultModal, setShowMatchResultModal] = useState(false);
   const [showMatchRequestModal, setShowMatchRequestModal] = useState(false);
+  const [showChatScreen, setShowChatScreen] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<User | null>(null);
+  const [chatOpponent, setChatOpponent] = useState<User | null>(null);
+  const [chatMatchId, setChatMatchId] = useState<string>('');
   const [isMatchRequesting, setIsMatchRequesting] = useState(false);
 
   // Fetch other players (excluding current user)
@@ -206,6 +210,47 @@ export default function MainApp() {
   const handleCloseMatchResultModal = () => {
     setShowMatchResultModal(false);
     setSelectedMatch(null);
+  };
+
+  const handleOpenChat = (match: Match) => {
+    if (!appUser) return;
+    
+    const isRequester = match.requesterId === appUser.id;
+    const opponentId = isRequester ? match.targetId : match.requesterId;
+    
+    // Try to find opponent in loaded lists first
+    let opponent = rankingUsers.find(u => u.id === opponentId) || 
+      players.find(u => u.id === opponentId);
+    
+    if (!opponent) {
+      // Create placeholder opponent if not found in lists
+      opponent = {
+        id: opponentId,
+        username: "로딩 중...",
+        email: "",
+        photoURL: null,
+        ntrp: "0.0",
+        region: "알 수 없음",
+        age: "0",
+        bio: null,
+        availableTimes: [],
+        points: 0,
+        wins: 0,
+        losses: 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
+    
+    setChatOpponent(opponent);
+    setChatMatchId(match.id);
+    setShowChatScreen(true);
+  };
+
+  const handleCloseChatScreen = () => {
+    setShowChatScreen(false);
+    setChatOpponent(null);
+    setChatMatchId('');
   };
 
   if (!appUser) {
@@ -399,13 +444,22 @@ export default function MainApp() {
                         </div>
                       )}
                       {match.status === 'accepted' && (
-                        <button
-                          onClick={() => handleCompleteMatch(match)}
-                          className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                          data-testid={`button-complete-match-${match.id}`}
-                        >
-                          경기 완료
-                        </button>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleOpenChat(match)}
+                            className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                            data-testid={`button-open-chat-${match.id}`}
+                          >
+                            💬 채팅
+                          </button>
+                          <button
+                            onClick={() => handleCompleteMatch(match)}
+                            className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                            data-testid={`button-complete-match-${match.id}`}
+                          >
+                            경기 완료
+                          </button>
+                        </div>
                       )}
                       {match.status === 'completed' && match.result && (
                         <div className="text-center">
@@ -681,6 +735,17 @@ export default function MainApp() {
       </main>
 
       <BottomNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+      
+      {/* Chat Screen - Full overlay when active */}
+      {showChatScreen && chatOpponent && (
+        <div className="fixed inset-0 z-50">
+          <ChatScreen
+            matchId={chatMatchId}
+            opponent={chatOpponent}
+            onBack={handleCloseChatScreen}
+          />
+        </div>
+      )}
       
       {/* Post Creation Modal */}
       <PostCreateModal
