@@ -15,6 +15,7 @@ export interface User {
   wins: number;
   losses: number;
   tier?: string; // Calculated tier based on performance
+  role?: 'admin' | 'user'; // User role for permissions
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +61,7 @@ export interface InsertUser {
   age: string;
   bio?: string | null;
   availableTimes: string[];
+  role?: 'admin' | 'user';
 }
 
 export interface InsertMatch {

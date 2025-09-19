@@ -13,6 +13,8 @@ import MatchResultModal from "./MatchResultModal";
 import MatchRequestModal from "./MatchRequestModal";
 import ChatScreen from "./ChatScreen";
 import TierProgressCard from "./TierProgressCard";
+import AdminPanel from "./AdminPanel";
+import AdminPromotion from "./AdminPromotion";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -29,6 +31,7 @@ export default function MainApp() {
   const [chatOpponent, setChatOpponent] = useState<User | null>(null);
   const [chatMatchId, setChatMatchId] = useState<string>('');
   const [isMatchRequesting, setIsMatchRequesting] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   // Fetch other players (excluding current user)
   const { 
@@ -673,6 +676,11 @@ export default function MainApp() {
             </div>
           </div>
 
+          {/* Admin Promotion (Development/Test Mode) */}
+          <div className="p-4">
+            <AdminPromotion />
+          </div>
+
           {/* Tier Progress Card */}
           <div className="p-4">
             <TierProgressCard user={appUser} />
@@ -731,6 +739,21 @@ export default function MainApp() {
               </span>
               <i className="fas fa-chevron-right text-muted-foreground" />
             </button>
+
+            {/* Admin Panel Button - Only visible to admin users */}
+            {appUser.role === 'admin' && (
+              <button 
+                onClick={() => setShowAdminPanel(true)}
+                className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" 
+                data-testid="button-admin-panel"
+              >
+                <span className="flex items-center">
+                  <i className="fas fa-shield-alt w-6 mr-3 text-orange-500" />
+                  관리자 패널
+                </span>
+                <i className="fas fa-chevron-right text-muted-foreground" />
+              </button>
+            )}
             
             <button 
               onClick={handleLogout}
@@ -757,6 +780,22 @@ export default function MainApp() {
             opponent={chatOpponent}
             onBack={handleCloseChatScreen}
           />
+        </div>
+      )}
+
+      {/* Admin Panel - Full screen overlay for admin users */}
+      {showAdminPanel && (
+        <div className="fixed inset-0 z-50">
+          <div className="flex h-full">
+            <button
+              onClick={() => setShowAdminPanel(false)}
+              className="absolute top-4 left-4 z-10 p-2 bg-white rounded-full shadow-lg hover:bg-gray-50 transition-colors"
+              data-testid="button-close-admin"
+            >
+              <i className="fas fa-arrow-left text-gray-600" />
+            </button>
+            <AdminPanel />
+          </div>
         </div>
       )}
       
