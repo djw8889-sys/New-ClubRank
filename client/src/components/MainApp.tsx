@@ -15,6 +15,8 @@ import ChatScreen from "./ChatScreen";
 import TierProgressCard from "./TierProgressCard";
 import AdminPanel from "./AdminPanel";
 import AdminPromotion from "./AdminPromotion";
+import FeedbackModal from "./FeedbackModal";
+import MatchPointLogo from "./MatchPointLogo";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -32,6 +34,7 @@ export default function MainApp() {
   const [chatMatchId, setChatMatchId] = useState<string>('');
   const [isMatchRequesting, setIsMatchRequesting] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   // Fetch other players (excluding current user)
   const { 
@@ -272,6 +275,7 @@ export default function MainApp() {
       <header className="bg-background border-b border-border sticky top-0 z-20">
         <div className="flex justify-between items-center p-4">
           <div className="flex items-center space-x-3">
+            <MatchPointLogo size="sm" className="bg-transparent" />
             <h1 className="text-xl font-bold text-foreground" data-testid="text-main-header">
               {mainHeader}
             </h1>
@@ -732,9 +736,13 @@ export default function MainApp() {
               <i className="fas fa-chevron-right text-muted-foreground" />
             </button>
             
-            <button className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" data-testid="button-feedback">
+            <button 
+              onClick={() => setShowFeedbackModal(true)}
+              className="w-full text-left p-4 bg-background rounded-xl border border-border flex justify-between items-center hover:bg-muted transition-colors" 
+              data-testid="button-feedback"
+            >
               <span className="flex items-center">
-                <i className="fas fa-lightbulb w-6 mr-3 text-blue-500" />
+                <i className="fas fa-lightbulb w-6 mr-3 text-green-600" />
                 서비스 개선 제안
               </span>
               <i className="fas fa-chevron-right text-muted-foreground" />
@@ -830,6 +838,12 @@ export default function MainApp() {
         targetUser={selectedPlayer}
         currentUserPoints={appUser?.points || 0}
         isLoading={isMatchRequesting}
+      />
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
       />
     </div>
   );
