@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import MatchPointLogo from "./MatchPointLogo";
+import FirebaseSetupGuide from "./FirebaseSetupGuide";
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
@@ -20,9 +21,17 @@ export default function LoginScreen() {
       let errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
       
       if (error?.code === 'auth/unauthorized-domain') {
-        errorMessage = "현재 도메인이 승인되지 않았습니다. 관리자에게 문의하세요.";
+        errorMessage = "현재 도메인이 승인되지 않았습니다. Firebase 콘솔에서 도메인을 추가해야 합니다.";
+      } else if (error?.code === 'auth/operation-not-allowed') {
+        errorMessage = "Google 로그인이 비활성화되어 있습니다. Firebase 콘솔에서 Google 인증 제공업체를 활성화해주세요.";
       } else if (error?.code === 'auth/popup-blocked') {
-        errorMessage = "팝업이 차단되었습니다. 브라우저 설정을 확인해주세요.";
+        errorMessage = "팝업이 차단되었습니다. 브라우저 설정을 확인하거나 페이지를 새로고침해주세요.";
+      } else if (error?.code === 'auth/popup-closed-by-user') {
+        errorMessage = "로그인이 취소되었습니다. 다시 시도해주세요.";
+      } else if (error?.code === 'auth/cancelled-popup-request') {
+        errorMessage = "다른 로그인 팝업이 이미 열려있습니다. 잠시 후 다시 시도해주세요.";
+      } else if (error?.code === 'auth/network-request-failed') {
+        errorMessage = "네트워크 연결을 확인해주세요.";
       }
       
       toast({
@@ -83,6 +92,8 @@ export default function LoginScreen() {
           서비스 이용을 위해 개인정보 처리방침과<br />
           이용약관에 동의가 필요합니다.
         </p>
+        
+        <FirebaseSetupGuide />
       </div>
     </div>
   );

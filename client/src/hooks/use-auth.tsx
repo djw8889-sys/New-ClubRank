@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "firebase/auth";
-import { onAuthStateChanged, signInWithRedirect, signOut, getRedirectResult } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, getRedirectResult } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 import { User as AppUser } from "@shared/schema";
@@ -23,9 +23,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithRedirect(auth, googleProvider);
-    } catch (error) {
+      // Try popup first (works better in published environments)
+      try {
+        const result = await signInWithPopup(auth, googleProvider);
+        console.log("Google popup sign-in successful:", result.user);
+        return;
+      } catch (popupError: any) {
+        console.warn("Popup sign-in failed, trying redirect:", popupError);
+        
+        // If popup fails (e.g., popup blocked, unsupported environment), fall back to redirect
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/popup-closed-by-user' ||
+            popupError.code === 'auth/operation-not-supported-in-this-environment') {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        }
+        throw popupError;
+      }
+    } catch (error: any) {
       console.error("Google sign-in error:", error);
+      
+      // Add more specific error handling
+      if (error.code === 'auth/unauthorized-domain') {
+        console.error("Domain not authorized. Please add the domain to Firebase Console.");
+        console.error("Current domain:", window.location.origin);
+      }
+      
       // Re-throw error so UI can handle it
       throw error;
     }

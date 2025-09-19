@@ -22,6 +22,12 @@ if (!firebaseConfig.apiKey) {
 
 console.log('Firebase Config loaded successfully');
 
+// Debug information for development only
+if (import.meta.env.DEV) {
+  console.log('Current domain:', window.location.origin);
+  console.log('Firebase authDomain:', firebaseConfig.authDomain);
+}
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
