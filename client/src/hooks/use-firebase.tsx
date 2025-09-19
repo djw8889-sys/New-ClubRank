@@ -240,9 +240,9 @@ export function useFirestore() {
 
         // Update user stats based on result
         if (result === 'requester_won') {
-          // Winner gets bonus points + 1 win
+          // Winner gets full refund + bonus points + 1 win
           transaction.update(requesterRef, {
-            points: increment(25), // 25 bonus points (50 already deducted)
+            points: increment(75), // 50 refund + 25 bonus = net +25P
             wins: increment(1),
           });
           // Loser gets +1 loss
@@ -250,9 +250,9 @@ export function useFirestore() {
             losses: increment(1),
           });
         } else if (result === 'target_won') {
-          // Winner gets bonus points + 1 win
+          // Winner gets full refund + bonus points + 1 win
           transaction.update(targetRef, {
-            points: increment(25), // 25 bonus points (50 already deducted)
+            points: increment(75), // 50 refund + 25 bonus = net +25P
             wins: increment(1),
           });
           // Loser gets +1 loss
@@ -260,8 +260,8 @@ export function useFirestore() {
             losses: increment(1),
           });
         } else if (result === 'draw') {
-          // Draw: Both get partial refund
-          const drawRefund = 25;
+          // Draw: Both get full refund
+          const drawRefund = 50;
           transaction.update(requesterRef, {
             points: increment(drawRefund),
           });

@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFirestoreCollection, useFirestore } from "@/hooks/use-firebase";
 import { User, Post, Match } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { calculateTier, getTierProgress } from "@/utils/tierCalculator";
 import PlayerCard from "./PlayerCard";
 import BottomNavigation from "./BottomNavigation";
 import LoadingSpinner from "./LoadingSpinner";
@@ -11,6 +12,7 @@ import PostCreateModal from "./PostCreateModal";
 import MatchResultModal from "./MatchResultModal";
 import MatchRequestModal from "./MatchRequestModal";
 import ChatScreen from "./ChatScreen";
+import TierProgressCard from "./TierProgressCard";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -528,7 +530,13 @@ export default function MainApp() {
                           {user.username}
                           {user.id === appUser?.id && <span className="ml-2 text-xs text-primary font-bold">(나)</span>}
                         </p>
-                        <p className="text-sm text-muted-foreground">NTRP {user.ntrp} • {user.region}</p>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-muted-foreground">NTRP {user.ntrp}</span>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${calculateTier(user.points, user.wins, user.losses).color} ${calculateTier(user.points, user.wins, user.losses).bgColor}`}>
+                            {calculateTier(user.points, user.wins, user.losses).name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">• {user.region}</span>
+                        </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-accent" data-testid={`text-rank-points-${index + 1}`}>{user.points}P</p>
@@ -665,8 +673,13 @@ export default function MainApp() {
             </div>
           </div>
 
+          {/* Tier Progress Card */}
+          <div className="p-4">
+            <TierProgressCard user={appUser} />
+          </div>
+
           {/* Stats Cards */}
-          <div className="p-4 grid grid-cols-2 gap-4">
+          <div className="px-4 grid grid-cols-2 gap-4">
             <div className="bg-background rounded-xl p-4 text-center border border-border">
               <div className="text-2xl font-bold text-primary" data-testid="text-user-points-display">{appUser.points}</div>
               <div className="text-xs text-muted-foreground">보유 포인트</div>

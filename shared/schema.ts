@@ -14,6 +14,7 @@ export interface User {
   points: number;
   wins: number;
   losses: number;
+  tier?: string; // Calculated tier based on performance
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,5 +1,6 @@
 import { User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+import { calculateTier } from "@/utils/tierCalculator";
 
 interface PlayerCardProps {
   player: User;
@@ -10,6 +11,8 @@ export default function PlayerCard({ player, onMatchRequest }: PlayerCardProps) 
   const handleMatchRequest = () => {
     onMatchRequest(player.id);
   };
+  
+  const tier = calculateTier(player.points, player.wins, player.losses);
 
   return (
     <div className="bg-background rounded-xl shadow-sm match-card border border-border overflow-hidden" data-testid={`card-player-${player.id}`}>
@@ -36,7 +39,11 @@ export default function PlayerCard({ player, onMatchRequest }: PlayerCardProps) 
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
                     NTRP {player.ntrp}
                   </span>
-                  <span className="text-xs text-muted-foreground">{player.age}</span>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${tier.color} ${tier.bgColor}`} data-testid={`text-player-tier-${player.id}`}>
+                    <i className="fas fa-medal mr-1" />
+                    {tier.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{player.age}세</span>
                 </div>
               </div>
               <div className="text-right">
