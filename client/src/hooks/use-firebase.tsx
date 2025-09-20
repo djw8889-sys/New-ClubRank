@@ -383,7 +383,9 @@ export function useFirestore() {
           targetId,
           status: 'pending',
           pointsCost: 0, // Test version: free matches
+          isReviewed: false, // 기본값: 리뷰 미완료
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
         
         // Test version: No point deduction

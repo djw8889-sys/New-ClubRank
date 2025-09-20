@@ -14,6 +14,7 @@ export interface User {
   points: number;
   wins: number;
   losses: number;
+  mannerScore: number; // 매너 점수 (1-5, 기본값 5)
   tier?: string; // Calculated tier based on performance
   role?: 'admin' | 'user'; // User role for permissions
   createdAt: Date;
@@ -29,6 +30,7 @@ export interface Match {
   location?: string;
   pointsCost: number;
   result?: 'requester_won' | 'target_won' | 'draw';
+  isReviewed: boolean; // 경기 후 리뷰 완료 여부
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +86,15 @@ export interface Comment {
   createdAt: Date;
 }
 
+export interface Friend {
+  id: string;
+  userId1: string; // 친구 요청을 보낸 사용자
+  userId2: string; // 친구 요청을 받은 사용자
+  status: 'pending' | 'accepted'; // 친구 관계 상태
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Input types for creating new records (omitting auto-generated fields)
 export interface InsertUser {
   email: string;
@@ -94,6 +105,7 @@ export interface InsertUser {
   age: string;
   bio?: string | null;
   availableTimes: string[];
+  mannerScore?: number; // 기본값 5
   role?: 'admin' | 'user';
 }
 
@@ -105,6 +117,7 @@ export interface InsertMatch {
   location?: string;
   pointsCost: number;
   result?: 'requester_won' | 'target_won' | 'draw';
+  isReviewed?: boolean; // 기본값 false
 }
 
 export interface InsertChat {
@@ -133,4 +146,10 @@ export interface InsertMessage {
 export interface InsertComment {
   authorId: string;
   content: string;
+}
+
+export interface InsertFriend {
+  userId1: string;
+  userId2: string;
+  status: 'pending' | 'accepted';
 }
