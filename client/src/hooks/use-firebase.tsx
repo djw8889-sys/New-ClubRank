@@ -53,6 +53,13 @@ export function useFirestoreCollection<T>(
               if (normalizedData[key] instanceof Timestamp) {
                 normalizedData[key] = normalizedData[key].toDate();
               }
+              // Normalize nested comment timestamps
+              if (key === 'comments' && Array.isArray(normalizedData[key])) {
+                normalizedData[key] = normalizedData[key].map((comment: any) => ({
+                  ...comment,
+                  createdAt: comment.createdAt instanceof Timestamp ? comment.createdAt.toDate() : comment.createdAt
+                }));
+              }
             });
             return {
               id: doc.id,
@@ -278,6 +285,72 @@ export function useFirestore() {
     }
   };
 
+  const toggleLike = async (postId: string) => {
+    if (!user) throw new Error("User not authenticated");
+    
+    try {
+      await runTransaction(db, async (transaction) => {
+        const postRef = doc(db, 'posts', postId);
+        const postDoc = await transaction.get(postRef);
+        
+        if (!postDoc.exists()) throw new Error("Post not found");
+        
+        const post = postDoc.data();
+        const currentLikes = Array.isArray(post.likes) ? post.likes : [];
+        
+        let newLikes;
+        if (currentLikes.includes(user.uid)) {
+          // Remove like
+          newLikes = currentLikes.filter((id: string) => id !== user.uid);
+        } else {
+          // Add like
+          newLikes = [...currentLikes, user.uid];
+        }
+        
+        transaction.update(postRef, {
+          likes: newLikes,
+          updatedAt: serverTimestamp(),
+        });
+      });
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      throw error;
+    }
+  };
+
+  const addComment = async (postId: string, content: string) => {
+    if (!user) throw new Error("User not authenticated");
+    
+    try {
+      await runTransaction(db, async (transaction) => {
+        const postRef = doc(db, 'posts', postId);
+        const postDoc = await transaction.get(postRef);
+        
+        if (!postDoc.exists()) throw new Error("Post not found");
+        
+        const post = postDoc.data();
+        const currentComments = post.comments || [];
+        
+        const newComment = {
+          id: Date.now().toString(), // Simple ID generation
+          authorId: user.uid,
+          content: content.trim(),
+          createdAt: serverTimestamp(),
+        };
+        
+        const newComments = [...currentComments, newComment];
+        
+        transaction.update(postRef, {
+          comments: newComments,
+          updatedAt: serverTimestamp(),
+        });
+      });
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      throw error;
+    }
+  };
+
   return {
     addDocument,
     updateDocument,
@@ -287,6 +360,8 @@ export function useFirestore() {
     rejectMatch,
     requestMatch,
     completeMatch,
+    toggleLike,
+    addComment,
   };
 
   async function requestMatch(requesterId: string, targetId: string, pointsCost: number = 0) {

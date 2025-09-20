@@ -26,7 +26,7 @@ import ShopModal from "./ShopModal";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
-  const { requestMatch, acceptMatch, rejectMatch, deleteDocument } = useFirestore();
+  const { requestMatch, acceptMatch, rejectMatch, deleteDocument, toggleLike, addComment } = useFirestore();
   const { onlineUsers } = usePresence();
   const { createOrFindChatRoom, chatRooms } = useChat();
   const { toast } = useToast();
@@ -48,6 +48,8 @@ export default function MainApp() {
   const [showMatchHistoryModal, setShowMatchHistoryModal] = useState(false);
   const [showPointChargeModal, setShowPointChargeModal] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
+  const [commentInputs, setCommentInputs] = useState<{[postId: string]: string}>({});
+  const [showComments, setShowComments] = useState<{[postId: string]: boolean}>({});
 
   // Fetch other players (excluding current user)
   const { 
@@ -229,6 +231,52 @@ export default function MainApp() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleToggleLike = async (postId: string) => {
+    if (!appUser) return;
+    
+    try {
+      await toggleLike(postId);
+    } catch (error: any) {
+      console.error("Toggle like error:", error);
+      toast({
+        title: "좋아요 실패",
+        description: "다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddComment = async (postId: string) => {
+    if (!appUser) return;
+    
+    const commentContent = commentInputs[postId]?.trim();
+    if (!commentContent) return;
+    
+    try {
+      await addComment(postId, commentContent);
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+      toast({
+        title: "댓글 작성 완료",
+        description: "댓글이 성공적으로 작성되었습니다.",
+      });
+    } catch (error: any) {
+      console.error("Add comment error:", error);
+      toast({
+        title: "댓글 작성 실패",
+        description: "다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleCommentSection = (postId: string) => {
+    setShowComments(prev => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const updateCommentInput = (postId: string, value: string) => {
+    setCommentInputs(prev => ({ ...prev, [postId]: value }));
   };
 
   const handleLogout = async () => {
@@ -812,15 +860,106 @@ export default function MainApp() {
                       
                       {/* Post Actions */}
                       <div className="flex items-center space-x-4 pt-2 border-t border-border">
-                        <button className="flex items-center space-x-1 text-muted-foreground hover:text-red-500 transition-colors">
-                          <i className="far fa-heart" />
-                          <span className="text-sm" data-testid={`text-post-likes-${post.id}`}>{post.likes || 0}</span>
+                        <button 
+                          onClick={() => handleToggleLike(post.id)}
+                          className={`flex items-center space-x-1 transition-colors ${
+                            (Array.isArray(post.likes) ? post.likes : []).includes(appUser?.id || '') 
+                              ? 'text-red-500 hover:text-red-600' 
+                              : 'text-muted-foreground hover:text-red-500'
+                          }`}
+                          data-testid={`button-like-post-${post.id}`}
+                        >
+                          <i className={`${(Array.isArray(post.likes) ? post.likes : []).includes(appUser?.id || '') ? 'fas' : 'far'} fa-heart`} />
+                          <span className="text-sm" data-testid={`text-post-likes-${post.id}`}>
+                            {Array.isArray(post.likes) ? post.likes.length : (typeof post.likes === 'number' ? post.likes : 0)}
+                          </span>
                         </button>
-                        <button className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors">
+                        <button 
+                          onClick={() => toggleCommentSection(post.id)}
+                          className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors"
+                          data-testid={`button-comment-post-${post.id}`}
+                        >
                           <i className="far fa-comment" />
-                          <span className="text-sm">댓글</span>
+                          <span className="text-sm">댓글 {(post.comments || []).length}</span>
                         </button>
                       </div>
+
+                      {/* Comments Section */}
+                      {showComments[post.id] && (
+                        <div className="mt-4 pt-4 border-t border-border">
+                          {/* Existing Comments */}
+                          {(post.comments || []).length > 0 && (
+                            <div className="space-y-3 mb-4">
+                              {post.comments.map((comment) => {
+                                const commentAuthor = rankingUsers.find(user => user.id === comment.authorId) || 
+                                  players.find(user => user.id === comment.authorId) ||
+                                  (comment.authorId === appUser?.id ? appUser : null);
+                                
+                                return (
+                                  <div key={comment.id} className="flex space-x-3" data-testid={`comment-${comment.id}`}>
+                                    <img 
+                                      src={commentAuthor?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                                      alt={commentAuthor?.username || "Unknown"} 
+                                      className="w-8 h-8 rounded-full object-cover"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="bg-muted rounded-lg px-3 py-2">
+                                        <p className="font-semibold text-sm text-foreground">
+                                          {commentAuthor?.username || "Unknown User"}
+                                        </p>
+                                        <p className="text-sm text-foreground" data-testid={`text-comment-content-${comment.id}`}>
+                                          {comment.content}
+                                        </p>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground mt-1 ml-3">
+                                        {comment.createdAt && (comment.createdAt instanceof Date ? comment.createdAt : new Date(comment.createdAt)).toLocaleDateString('ko-KR', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit'
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Comment Input */}
+                          <div className="flex space-x-3">
+                            <img 
+                              src={appUser?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                              alt={appUser?.username || "User"} 
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                            <div className="flex-1 flex space-x-2">
+                              <input
+                                type="text"
+                                value={commentInputs[post.id] || ''}
+                                onChange={(e) => updateCommentInput(post.id, e.target.value)}
+                                onKeyPress={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleAddComment(post.id);
+                                  }
+                                }}
+                                placeholder="댓글을 입력하세요..."
+                                className="flex-1 px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                data-testid={`input-comment-${post.id}`}
+                              />
+                              <button
+                                onClick={() => handleAddComment(post.id)}
+                                disabled={!commentInputs[post.id]?.trim()}
+                                className="px-3 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                data-testid={`button-submit-comment-${post.id}`}
+                              >
+                                <i className="fas fa-paper-plane" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

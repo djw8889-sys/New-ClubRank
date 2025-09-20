@@ -43,7 +43,8 @@ export default function PostCreateModal({ isOpen, onClose, onPostCreated }: Post
         authorId: appUser.id,
         title: formData.title.trim(),
         content: formData.content.trim(),
-        likes: 0,
+        likes: [],
+        comments: [],
       });
 
       toast({
