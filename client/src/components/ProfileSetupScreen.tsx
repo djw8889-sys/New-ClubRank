@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { getAvatarSrc } from "@/utils/avatar";
+import { HelpCircle, Info, Check, Camera } from "lucide-react";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface ProfileSetupScreenProps {
@@ -19,7 +21,8 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [profilePic, setProfilePic] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState(user?.photoURL || getAvatarSrc(null, { id: user?.uid, username: user?.displayName, email: user?.email }, 300));
+  const [previewUrl, setPreviewUrl] = useState(user?.photoURL || getAvatarSrc(null, { id: user?.uid || undefined, username: user?.displayName || undefined, email: user?.email || undefined }, 300));
+  const [showNtrpGuide, setShowNtrpGuide] = useState(false);
 
   const [formData, setFormData] = useState({
     username: user?.displayName || '',
@@ -97,6 +100,15 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
 
   const timeOptions = ['평일 오전', '평일 오후', '주말 오전', '주말 오후'];
 
+  const ntrpGuides = {
+    '2.5': '이제 막 공을 맞히기 시작했으며, 공이 어디로 갈지 예측하는 법을 배우는 단계입니다.',
+    '3.0': '중간 속도의 공을 꽤 일관적으로 칠 수 있지만, 아직 다양한 기술과 방향 제어는 부족합니다.',
+    '3.5': '안정적인 스트로크와 방향 제어가 가능하며, 네트 플레이에도 자신감이 붙는 단계입니다.',
+    '4.0': '거의 모든 스트로크를 안정적으로 구사하며, 경기의 흐름을 읽고 전략을 사용할 줄 압니다.',
+    '4.5': '강력한 서브와 스트로크를 가지며, 상대방을 압도할 수 있는 무기를 가진 상급 동호인입니다.',
+    '5.0': '모든 기술을 완벽하게 구사하며, 토너먼트 수준의 실력을 가진 준전문가급 선수입니다.'
+  };
+
   return (
     <div className="min-h-screen flex flex-col overflow-y-auto" data-testid="profile-setup-screen">
       <div className="bg-gradient-to-r from-primary to-emerald-600 px-6 pt-12 pb-8">
@@ -116,7 +128,7 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
                 data-testid="img-profile-preview"
               />
               <label htmlFor="profile-pic" className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-full shadow-lg hover:bg-primary/90 transition-colors cursor-pointer">
-                <i className="fas fa-camera text-sm" />
+                <Camera className="w-4 h-4" />
               </label>
             </div>
             <Label htmlFor="profile-pic" className="mt-3 text-sm font-medium text-primary cursor-pointer hover:underline">
@@ -152,9 +164,21 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="ntrp" className="block text-sm font-semibold text-foreground mb-2">
-                  NTRP
-                </Label>
+                <div className="flex items-center gap-2 mb-2">
+                  <Label htmlFor="ntrp" className="text-sm font-semibold text-foreground">
+                    NTRP
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNtrpGuide(true)}
+                    className="w-6 h-6 p-0 rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground"
+                    data-testid="button-ntrp-guide"
+                  >
+                    <HelpCircle className="w-3 h-3" />
+                  </Button>
+                </div>
                 <select
                   id="ntrp"
                   value={formData.ntrp}
@@ -263,12 +287,59 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
             {loading ? (
               <LoadingSpinner size="sm" className="mr-2" />
             ) : (
-              <i className="fas fa-check mr-2" />
+              <Check className="w-4 h-4 mr-2" />
             )}
             프로필 저장하고 시작하기
           </Button>
         </form>
       </div>
+
+      {/* NTRP 가이드 모달 */}
+      <Dialog open={showNtrpGuide} onOpenChange={setShowNtrpGuide}>
+        <DialogContent className="max-w-lg" data-testid="modal-ntrp-guide">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+              <Info className="w-5 h-5 text-primary" />
+              NTRP 레벨 가이드
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              자신의 실력에 맞는 NTRP 레벨을 선택해주세요. 정확한 레벨 선택은 적절한 상대와의 매칭에 도움이 됩니다.
+            </p>
+            <div className="space-y-3">
+              {Object.entries(ntrpGuides).map(([level, description]) => (
+                <div key={level} className="p-3 bg-muted rounded-lg" data-testid={`ntrp-guide-${level}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold bg-primary text-primary-foreground">
+                      NTRP {level}
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {level === '2.5' ? '초급' : 
+                       level === '3.0' ? '초중급' : 
+                       level === '3.5' ? '중급' : 
+                       level === '4.0' ? '중상급' : 
+                       level === '4.5' ? '상급' : '고급'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {description}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button 
+                onClick={() => setShowNtrpGuide(false)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                data-testid="button-close-ntrp-guide"
+              >
+                확인
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
