@@ -24,6 +24,7 @@ import ProfileEditModal from "./ProfileEditModal";
 import MatchHistoryModal from "./MatchHistoryModal";
 import PointChargeModal from "./PointChargeModal";
 import ShopModal from "./ShopModal";
+import UserProfileModal from "./UserProfileModal";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -49,6 +50,8 @@ export default function MainApp() {
   const [showMatchHistoryModal, setShowMatchHistoryModal] = useState(false);
   const [showPointChargeModal, setShowPointChargeModal] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
+  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [commentInputs, setCommentInputs] = useState<{[postId: string]: string}>({});
   const [showComments, setShowComments] = useState<{[postId: string]: boolean}>({});
 
@@ -300,6 +303,20 @@ export default function MainApp() {
       title: "게시글이 추가되었습니다",
       description: "커뮤니티에서 확인해보세요!",
     });
+  };
+
+  // 사용자 프로필 클릭 핸들러
+  const handleUserProfileClick = (userId: string) => {
+    if (userId && userId !== appUser?.id) {
+      setSelectedUserId(userId);
+      setShowUserProfileModal(true);
+    }
+  };
+
+  // 사용자 프로필 모달 닫기 핸들러
+  const handleCloseUserProfileModal = () => {
+    setShowUserProfileModal(false);
+    setSelectedUserId(null);
   };
 
   const handleCompleteMatch = (match: Match) => {
@@ -758,10 +775,15 @@ export default function MainApp() {
                       <img 
                         src={getAvatarSrc(user.photoURL, user, 80)} 
                         alt={user.username} 
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleUserProfileClick(user.id)}
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-foreground" data-testid={`text-rank-username-${index + 1}`}>
+                        <p 
+                          className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors" 
+                          data-testid={`text-rank-username-${index + 1}`}
+                          onClick={() => handleUserProfileClick(user.id)}
+                        >
                           {user.username}
                           {user.id === appUser?.id && <span className="ml-2 text-xs text-primary font-bold">(나)</span>}
                         </p>
@@ -827,10 +849,15 @@ export default function MainApp() {
                         <img 
                           src={getAvatarSrc(author?.photoURL, author, 80)} 
                           alt={author?.username || "Unknown"} 
-                          className="w-10 h-10 rounded-full object-cover"
+                          className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => author?.id && handleUserProfileClick(author.id)}
                         />
                         <div className="flex-1">
-                          <p className="font-semibold text-foreground" data-testid={`text-post-author-${post.id}`}>
+                          <p 
+                            className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors" 
+                            data-testid={`text-post-author-${post.id}`}
+                            onClick={() => author?.id && handleUserProfileClick(author.id)}
+                          >
                             {author?.username || "Unknown User"}
                           </p>
                           <p className="text-xs text-muted-foreground">
@@ -1197,6 +1224,13 @@ export default function MainApp() {
       <ShopModal 
         isOpen={showShopModal} 
         onClose={() => setShowShopModal(false)} 
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal 
+        isOpen={showUserProfileModal} 
+        onClose={handleCloseUserProfileModal}
+        userId={selectedUserId}
       />
     </div>
   );

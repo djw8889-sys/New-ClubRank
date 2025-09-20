@@ -3,6 +3,7 @@ import express from "express";
 import { createServer, type Server } from "http";
 import { adminDb, verifyFirebaseToken } from "./firebase-admin.js";
 import { FieldValue } from 'firebase-admin/firestore';
+import { registerUserRoutes } from "./routes/users.js";
 
 // 에러 코드 상수
 const ERROR_CODES = {
@@ -17,6 +18,9 @@ const ERROR_CODES = {
 export async function registerRoutes(app: Express): Promise<Server> {
   // JSON parsing middleware for API routes
   app.use(express.json());
+  
+  // Users 라우트 등록
+  registerUserRoutes(app);
 
   // 친구 요청 API
   app.post('/api/friends/request', verifyFirebaseToken, async (req: any, res) => {
