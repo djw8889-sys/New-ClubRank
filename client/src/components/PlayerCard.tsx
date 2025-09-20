@@ -1,6 +1,7 @@
 import { User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { calculateTier } from "@/utils/tierCalculator";
+import { getAvatarSrc } from "@/utils/avatar";
 
 interface PlayerCardProps {
   player: User;
@@ -21,7 +22,7 @@ export default function PlayerCard({ player, onMatchRequest }: PlayerCardProps) 
           {/* Profile image with online indicator */}
           <div className="relative">
             <img 
-              src={player.photoURL || "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+              src={getAvatarSrc(player.photoURL, player, 150)} 
               alt={`${player.username} profile`}
               className="w-16 h-16 rounded-full object-cover border-2 border-border"
               data-testid={`img-player-${player.id}`}

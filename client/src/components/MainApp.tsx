@@ -7,6 +7,7 @@ import { useChat } from "@/hooks/use-chat";
 import { User, Post, Match } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { calculateTier, getTierProgress } from "@/utils/tierCalculator";
+import { getAvatarSrc } from "@/utils/avatar";
 import PlayerCard from "./PlayerCard";
 import BottomNavigation from "./BottomNavigation";
 import LoadingSpinner from "./LoadingSpinner";
@@ -629,7 +630,7 @@ export default function MainApp() {
                   >
                     <div className="flex items-center space-x-3">
                       <img 
-                        src={opponent?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                        src={getAvatarSrc(opponent?.photoURL, opponent, 120)} 
                         alt={opponent?.username || "Unknown"} 
                         className="w-12 h-12 rounded-full object-cover"
                       />
@@ -755,7 +756,7 @@ export default function MainApp() {
                         <span className="sr-only">{index + 1}위</span>
                       </div>
                       <img 
-                        src={user.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                        src={getAvatarSrc(user.photoURL, user, 80)} 
                         alt={user.username} 
                         className="w-10 h-10 rounded-full object-cover"
                       />
@@ -824,7 +825,7 @@ export default function MainApp() {
                       {/* Post Header */}
                       <div className="flex items-center space-x-3 mb-3">
                         <img 
-                          src={author?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                          src={getAvatarSrc(author?.photoURL, author, 80)} 
                           alt={author?.username || "Unknown"} 
                           className="w-10 h-10 rounded-full object-cover"
                         />
@@ -904,7 +905,7 @@ export default function MainApp() {
                                 return (
                                   <div key={comment.id} className="flex space-x-3" data-testid={`comment-${comment.id}`}>
                                     <img 
-                                      src={commentAuthor?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                                      src={getAvatarSrc(commentAuthor?.photoURL, commentAuthor, 64)} 
                                       alt={commentAuthor?.username || "Unknown"} 
                                       className="w-8 h-8 rounded-full object-cover"
                                     />
@@ -935,7 +936,7 @@ export default function MainApp() {
                           {/* Comment Input */}
                           <div className="flex space-x-3">
                             <img 
-                              src={appUser?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                              src={getAvatarSrc(appUser?.photoURL, appUser, 64)} 
                               alt={appUser?.username || "User"} 
                               className="w-8 h-8 rounded-full object-cover"
                             />
@@ -980,7 +981,7 @@ export default function MainApp() {
           <div className="bg-gradient-to-r from-primary to-emerald-600 p-6 text-white">
             <div className="flex items-center space-x-4">
               <img 
-                src={appUser.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                src={getAvatarSrc(appUser.photoURL, appUser, 160)} 
                 alt="User profile" 
                 className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                 data-testid="img-user-profile"

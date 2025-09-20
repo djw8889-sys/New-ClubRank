@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { getAvatarSrc } from "@/utils/avatar";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface ProfileSetupScreenProps {
@@ -18,7 +19,7 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [profilePic, setProfilePic] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState(user?.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300");
+  const [previewUrl, setPreviewUrl] = useState(user?.photoURL || getAvatarSrc(null, { id: user?.uid, username: user?.displayName, email: user?.email }, 300));
 
   const [formData, setFormData] = useState({
     username: user?.displayName || '',

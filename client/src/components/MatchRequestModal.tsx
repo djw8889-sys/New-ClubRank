@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { User } from '@shared/schema';
+import { getAvatarSrc } from '@/utils/avatar';
 
 interface MatchRequestModalProps {
   isOpen: boolean;
@@ -46,7 +47,7 @@ export default function MatchRequestModal({
           {targetUser && (
             <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
               <img 
-                src={targetUser.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                src={getAvatarSrc(targetUser.photoURL, targetUser, 96)} 
                 alt={targetUser.username} 
                 className="w-12 h-12 rounded-full object-cover"
                 data-testid="img-target-user"

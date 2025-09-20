@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { User, Post, Match } from '@shared/schema';
 import { calculateTier } from '@/utils/tierCalculator';
+import { getAvatarSrc } from '@/utils/avatar';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminPanel() {
@@ -210,7 +211,7 @@ export default function AdminPanel() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               <img 
-                                src={user.photoURL || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'}
+                                src={getAvatarSrc(user.photoURL, user, 256)}
                                 alt={user.username}
                                 className="w-10 h-10 rounded-full mr-4"
                               />

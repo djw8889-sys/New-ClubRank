@@ -5,6 +5,7 @@ import { useFirestore, useFirestoreCollection } from "@/hooks/use-firebase";
 import { useChat, useChatMessages } from "@/hooks/use-chat";
 import { useAuth } from "@/hooks/use-auth";
 import { Chat, User, Match, Message } from "@shared/schema";
+import { getAvatarSrc } from "@/utils/avatar";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface ChatScreenProps {
@@ -83,7 +84,7 @@ export default function ChatScreen({ matchId, chatRoomId, opponent, onBack }: Ch
           <i className="fas fa-arrow-left text-lg" />
         </Button>
         <img 
-          src={opponent.photoURL || "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80"} 
+          src={getAvatarSrc(opponent.photoURL, opponent, 80)} 
           alt={opponent.username} 
           className="w-10 h-10 rounded-full object-cover"
           data-testid="img-chat-partner"

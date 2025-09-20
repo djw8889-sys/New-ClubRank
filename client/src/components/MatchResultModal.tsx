@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useFirestore } from "@/hooks/use-firebase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getAvatarSrc } from "@/utils/avatar";
 import LoadingSpinner from "./LoadingSpinner";
 import { Match, User } from "@shared/schema";
 
@@ -86,7 +87,7 @@ export default function MatchResultModal({
             <div className="flex items-center justify-center space-x-4">
               <div className="text-center">
                 <img 
-                  src={currentUser.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                  src={getAvatarSrc(currentUser.photoURL, currentUser, 128)} 
                   alt={currentUser.username} 
                   className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
                 />
@@ -98,7 +99,7 @@ export default function MatchResultModal({
               <div className="text-2xl font-bold text-muted-foreground">VS</div>
               <div className="text-center">
                 <img 
-                  src={opponent.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
+                  src={getAvatarSrc(opponent.photoURL, opponent, 128)} 
                   alt={opponent.username} 
                   className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
                 />
