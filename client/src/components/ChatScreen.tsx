@@ -2,40 +2,49 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirestore, useFirestoreCollection } from "@/hooks/use-firebase";
+import { useChat, useChatMessages } from "@/hooks/use-chat";
 import { useAuth } from "@/hooks/use-auth";
-import { Chat, User, Match } from "@shared/schema";
+import { Chat, User, Match, Message } from "@shared/schema";
 import LoadingSpinner from "./LoadingSpinner";
 
 interface ChatScreenProps {
-  matchId: string;
+  matchId?: string; // Optional for 1:1 chats
+  chatRoomId?: string; // For 1:1 chats
   opponent: User;
   onBack: () => void;
 }
 
-export default function ChatScreen({ matchId, opponent, onBack }: ChatScreenProps) {
+export default function ChatScreen({ matchId, chatRoomId, opponent, onBack }: ChatScreenProps) {
   const { appUser } = useAuth();
   const { addDocument } = useFirestore();
+  const { sendMessage } = useChat();
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch chat messages for this match in real-time (no orderBy to avoid composite index)
-  const {
-    data: rawMessages,
-    loading: messagesLoading,
-    error: messagesError
-  } = useFirestoreCollection<Chat>('chats', [
-    { field: 'matchId', operator: '==', value: matchId }
-  ]);
+  // For 1:1 chats, use the new chat system
+  const { messages: chatRoomMessages, loading: chatRoomLoading } = useChatMessages(chatRoomId || null);
 
-  // Sort messages in-memory to avoid Firestore composite index requirement
-  // Create a copy to avoid mutating the original array from the hook
-  const messages = [...rawMessages].sort((a, b) => {
-    // Handle undefined timestamps (place them at the end)
-    const timeA = a.createdAt ? +new Date(a.createdAt) : Infinity;
-    const timeB = b.createdAt ? +new Date(b.createdAt) : Infinity;
-    return timeA - timeB;
-  });
+  // For legacy match-based chats, use the old system
+  const {
+    data: rawMatchMessages,
+    loading: matchMessagesLoading,
+    error: messagesError
+  } = useFirestoreCollection<Chat>('chats', matchId ? [
+    { field: 'matchId', operator: '==', value: matchId }
+  ] : []);
+
+  // Determine which messages to use
+  const isNewChatSystem = !!chatRoomId;
+  const messages = isNewChatSystem 
+    ? chatRoomMessages 
+    : [...rawMatchMessages].sort((a, b) => {
+        const timeA = a.createdAt ? +new Date(a.createdAt) : Infinity;
+        const timeB = b.createdAt ? +new Date(b.createdAt) : Infinity;
+        return timeA - timeB;
+      });
+
+  const messagesLoading = isNewChatSystem ? chatRoomLoading : matchMessagesLoading;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -47,11 +56,17 @@ export default function ChatScreen({ matchId, opponent, onBack }: ChatScreenProp
     
     setIsSending(true);
     try {
-      await addDocument('chats', {
-        matchId,
-        senderId: appUser.id,
-        message: message.trim()
-      });
+      if (isNewChatSystem && chatRoomId) {
+        // Use new chat system
+        await sendMessage(chatRoomId, message.trim());
+      } else if (matchId) {
+        // Use legacy match-based chat system
+        await addDocument('chats', {
+          matchId,
+          senderId: appUser.id,
+          message: message.trim()
+        });
+      }
       setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -118,7 +133,11 @@ export default function ChatScreen({ matchId, opponent, onBack }: ChatScreenProp
                     }`}
                     data-testid={isSent ? 'message-sent' : 'message-received'}
                   >
-                    <p className="break-words">{msg.message}</p>
+                    <p className="break-words">
+                      {isNewChatSystem 
+                        ? (msg as Message).content 
+                        : (msg as Chat).message}
+                    </p>
                     {msg.createdAt && (
                       <p className={`text-xs mt-1 ${isSent ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                         {new Date(msg.createdAt).toLocaleTimeString('ko-KR', {

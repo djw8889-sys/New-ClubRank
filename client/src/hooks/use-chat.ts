@@ -27,8 +27,7 @@ export function useChat() {
 
     const chatRoomsQuery = query(
       collection(db, 'chatRooms'),
-      where('participants', 'array-contains', user.uid),
-      orderBy('updatedAt', 'desc')
+      where('participants', 'array-contains', user.uid)
     );
 
     const unsubscribe = onSnapshot(chatRoomsQuery, (snapshot) => {
@@ -39,7 +38,15 @@ export function useChat() {
         updatedAt: doc.data().updatedAt?.toDate() || new Date(),
         lastMessageAt: doc.data().lastMessageAt?.toDate() || undefined,
       } as ChatRoom));
-      setChatRooms(rooms);
+      
+      // Sort on client side to avoid composite index requirement
+      const sortedRooms = rooms.sort((a, b) => {
+        const timeA = a.updatedAt ? a.updatedAt.getTime() : 0;
+        const timeB = b.updatedAt ? b.updatedAt.getTime() : 0;
+        return timeB - timeA; // Descending order
+      });
+      
+      setChatRooms(sortedRooms);
     });
 
     return () => unsubscribe();
@@ -128,8 +135,7 @@ export function useChatMessages(chatRoomId: string | null) {
     
     const messagesQuery = query(
       collection(db, 'messages'),
-      where('chatRoomId', '==', chatRoomId),
-      orderBy('createdAt', 'asc')
+      where('chatRoomId', '==', chatRoomId)
     );
 
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
@@ -139,7 +145,14 @@ export function useChatMessages(chatRoomId: string | null) {
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       } as Message));
       
-      setMessages(messageList);
+      // Sort on client side to avoid composite index requirement
+      const sortedMessages = messageList.sort((a, b) => {
+        const timeA = a.createdAt ? a.createdAt.getTime() : 0;
+        const timeB = b.createdAt ? b.createdAt.getTime() : 0;
+        return timeA - timeB; // Ascending order
+      });
+      
+      setMessages(sortedMessages);
       setLoading(false);
     });
 

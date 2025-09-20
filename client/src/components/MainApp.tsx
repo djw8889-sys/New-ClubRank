@@ -2,6 +2,8 @@ import { useState } from "react";
 import { increment } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
 import { useFirestoreCollection, useFirestore } from "@/hooks/use-firebase";
+import { usePresence } from "@/hooks/use-presence";
+import { useChat } from "@/hooks/use-chat";
 import { User, Post, Match } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { calculateTier, getTierProgress } from "@/utils/tierCalculator";
@@ -25,6 +27,8 @@ import ShopModal from "./ShopModal";
 export default function MainApp() {
   const { appUser, logout } = useAuth();
   const { requestMatch, acceptMatch, rejectMatch, deleteDocument } = useFirestore();
+  const { onlineUsers } = usePresence();
+  const { createOrFindChatRoom, chatRooms } = useChat();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('player-tab');
   const [mainHeader, setMainHeader] = useState('매치 찾기');
@@ -36,6 +40,7 @@ export default function MainApp() {
   const [selectedPlayer, setSelectedPlayer] = useState<User | null>(null);
   const [chatOpponent, setChatOpponent] = useState<User | null>(null);
   const [chatMatchId, setChatMatchId] = useState<string>('');
+  const [isNewChatMode, setIsNewChatMode] = useState(false); // true for 1:1 chat, false for match-based chat
   const [isMatchRequesting, setIsMatchRequesting] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -122,6 +127,36 @@ export default function MainApp() {
       });
     } finally {
       setIsMatchRequesting(false);
+    }
+  };
+
+  // 실시간 접속자와 채팅 시작
+  const handleStartChat = async (otherUserId: string) => {
+    try {
+      const chatRoomId = await createOrFindChatRoom(otherUserId);
+      
+      // 채팅 화면으로 이동
+      const otherUser = players.find(p => p.id === otherUserId) || 
+        onlineUsers.find(u => u.userId === otherUserId);
+      
+      if (otherUser) {
+        setChatOpponent(otherUser as User);
+        setChatMatchId(chatRoomId);
+        setIsNewChatMode(true);
+        setShowChatScreen(true);
+      }
+      
+      toast({
+        title: "채팅방 생성 완료",
+        description: "채팅을 시작할 수 있습니다.",
+      });
+    } catch (error: any) {
+      console.error("Chat creation error:", error);
+      toast({
+        title: "채팅 시작 실패",
+        description: "다시 시도해주세요.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -267,6 +302,7 @@ export default function MainApp() {
     setShowChatScreen(false);
     setChatOpponent(null);
     setChatMatchId('');
+    setIsNewChatMode(false);
   };
 
   if (!appUser) {
@@ -336,6 +372,54 @@ export default function MainApp() {
             </div>
           </div>
 
+          {/* 현재 접속 중인 플레이어 */}
+          {onlineUsers.length > 0 && (
+            <div className="p-4 bg-background border-b border-border">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                  현재 접속 중인 플레이어 ({onlineUsers.length})
+                </h3>
+              </div>
+              <div className="flex space-x-3 overflow-x-auto pb-2">
+                {onlineUsers.map((onlineUser) => {
+                  const playerInfo = players.find(p => p.id === onlineUser.userId);
+                  return (
+                    <div 
+                      key={onlineUser.userId} 
+                      className="flex-shrink-0 bg-muted rounded-lg p-3 min-w-[140px]"
+                      data-testid={`online-user-${onlineUser.userId}`}
+                    >
+                      <div className="text-center">
+                        <div className="relative mb-2">
+                          <img 
+                            src={onlineUser.photoURL || "https://source.boringavatars.com/beam/120/unknown?colors=264653,2a9d8f,e9c46a,f4a261,e76f51"} 
+                            alt={onlineUser.username || "Unknown"} 
+                            className="w-12 h-12 rounded-full mx-auto object-cover"
+                          />
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                        </div>
+                        <p className="text-sm font-medium text-foreground truncate" data-testid={`text-online-username-${onlineUser.userId}`}>
+                          {onlineUser.username || "Unknown"}
+                        </p>
+                        {playerInfo && (
+                          <p className="text-xs text-muted-foreground">NTRP {playerInfo.ntrp}</p>
+                        )}
+                        <button
+                          onClick={() => handleStartChat(onlineUser.userId)}
+                          className="mt-2 bg-primary text-primary-foreground px-3 py-1 rounded-md text-xs hover:bg-primary/90 transition-colors w-full"
+                          data-testid={`button-chat-${onlineUser.userId}`}
+                        >
+                          💬 채팅하기
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Filters */}
           <div className="p-4 bg-background border-b border-border">
             <div className="grid grid-cols-3 gap-3">
@@ -383,21 +467,93 @@ export default function MainApp() {
           </div>
         </div>
 
-        {/* Chat List Tab - Now showing matches */}
+        {/* Chat List Tab - Now showing both chat rooms and matches */}
         <div className={`tab-content ${activeTab === 'chat-list-tab' ? 'active' : 'hidden'}`}>
-          {matchesLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <LoadingSpinner size="lg" />
-              <p className="text-muted-foreground text-sm">매치 목록을 불러오는 중...</p>
+          {/* Chat Rooms Section */}
+          {chatRooms.length > 0 && (
+            <div className="p-4 border-b border-border">
+              <h3 className="font-semibold text-foreground mb-3 flex items-center">
+                <i className="fas fa-comments mr-2 text-primary" />
+                1:1 채팅 ({chatRooms.length})
+              </h3>
+              <div className="space-y-3">
+                {chatRooms.map((chatRoom) => {
+                  // Find the other participant
+                  const otherParticipantId = chatRoom.participants.find(id => id !== appUser?.id);
+                  const otherParticipant = players.find(p => p.id === otherParticipantId) ||
+                    rankingUsers.find(u => u.id === otherParticipantId);
+                  
+                  return (
+                    <div 
+                      key={chatRoom.id}
+                      className="bg-background rounded-xl p-4 border border-border hover:bg-muted transition-colors cursor-pointer"
+                      onClick={() => {
+                        if (otherParticipant) {
+                          setChatOpponent(otherParticipant);
+                          setChatMatchId(chatRoom.id);
+                          setIsNewChatMode(true);
+                          setShowChatScreen(true);
+                        }
+                      }}
+                      data-testid={`chat-room-${chatRoom.id}`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={otherParticipant?.photoURL || "https://source.boringavatars.com/beam/120/unknown?colors=264653,2a9d8f,e9c46a,f4a261,e76f51"} 
+                          alt={otherParticipant?.username || "Unknown"} 
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-semibold text-foreground" data-testid={`text-chat-participant-${chatRoom.id}`}>
+                              {otherParticipant?.username || "Unknown User"}
+                            </p>
+                            {chatRoom.lastMessageAt && (
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(chatRoom.lastMessageAt).toLocaleDateString('ko-KR', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </span>
+                            )}
+                          </div>
+                          {chatRoom.lastMessage && (
+                            <p className="text-sm text-muted-foreground truncate">{chatRoom.lastMessage}</p>
+                          )}
+                          {otherParticipant && (
+                            <p className="text-xs text-muted-foreground">NTRP {otherParticipant.ntrp}</p>
+                          )}
+                        </div>
+                        <i className="fas fa-chevron-right text-muted-foreground" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ) : allMatches.length === 0 ? (
-            <p className="text-center text-muted-foreground pt-10" data-testid="text-no-matches">
-              아직 매치가 없습니다.<br />
-              플레이어 탭에서 매치를 신청해보세요!
-            </p>
-          ) : (
-            <div className="p-4 space-y-3">
-              {allMatches.map((match) => {
+          )}
+
+          {/* Matches Section */}
+          <div className="p-4">
+            <h3 className="font-semibold text-foreground mb-3 flex items-center">
+              <i className="fas fa-trophy mr-2 text-accent" />
+              매치 목록 ({allMatches.length})
+            </h3>
+            {matchesLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <LoadingSpinner size="lg" />
+                <p className="text-muted-foreground text-sm">매치 목록을 불러오는 중...</p>
+              </div>
+            ) : allMatches.length === 0 ? (
+              <p className="text-center text-muted-foreground pt-10" data-testid="text-no-matches">
+                아직 매치가 없습니다.<br />
+                플레이어 탭에서 매치를 신청해보세요!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {allMatches.map((match) => {
                 const isRequester = match.requesterId === appUser?.id;
                 const opponentId = isRequester ? match.targetId : match.requesterId;
                 const opponent = rankingUsers.find(u => u.id === opponentId) || 
@@ -499,8 +655,9 @@ export default function MainApp() {
                   </div>
                 );
               })}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Ranking Tab */}
@@ -812,7 +969,8 @@ export default function MainApp() {
       {showChatScreen && chatOpponent && (
         <div className="fixed inset-0 z-50">
           <ChatScreen
-            matchId={chatMatchId}
+            matchId={isNewChatMode ? undefined : chatMatchId}
+            chatRoomId={isNewChatMode ? chatMatchId : undefined}
             opponent={chatOpponent}
             onBack={handleCloseChatScreen}
           />
