@@ -15,6 +15,8 @@ export interface User {
   wins: number;
   losses: number;
   mannerScore: number; // 매너 점수 (1-5, 기본값 5)
+  mannerReviewsCount: number; // 매너 리뷰 받은 횟수
+  mannerScoreSum: number; // 매너 점수 합계
   tier?: string; // Calculated tier based on performance
   role?: 'admin' | 'user'; // User role for permissions
   createdAt: Date;
@@ -30,7 +32,9 @@ export interface Match {
   location?: string;
   pointsCost: number;
   result?: 'requester_won' | 'target_won' | 'draw';
-  isReviewed: boolean; // 경기 후 리뷰 완료 여부
+  isReviewed: boolean; // 전체 리뷰 완료 여부 (양쪽 다 완료)
+  reviewedByRequester: boolean; // 요청자 리뷰 완료 여부
+  reviewedByTarget: boolean; // 대상자 리뷰 완료 여부
   createdAt: Date;
   updatedAt: Date;
 }
@@ -106,6 +110,8 @@ export interface InsertUser {
   bio?: string | null;
   availableTimes: string[];
   mannerScore?: number; // 기본값 5
+  mannerReviewsCount?: number; // 기본값 0
+  mannerScoreSum?: number; // 기본값 0 (누적 합계)
   role?: 'admin' | 'user';
 }
 
@@ -117,7 +123,9 @@ export interface InsertMatch {
   location?: string;
   pointsCost: number;
   result?: 'requester_won' | 'target_won' | 'draw';
-  isReviewed?: boolean; // 기본값 false
+  isReviewed?: boolean; // 기본값 false (전체 리뷰 완료)
+  reviewedByRequester?: boolean; // 기본값 false
+  reviewedByTarget?: boolean; // 기본값 false
 }
 
 export interface InsertChat {
