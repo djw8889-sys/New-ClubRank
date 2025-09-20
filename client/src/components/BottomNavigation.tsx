@@ -5,7 +5,7 @@ interface BottomNavigationProps {
 
 export default function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
   const tabs = [
-    { id: 'player-tab', header: '매치 찾기', icon: 'fas fa-users', label: '매치' },
+    { id: 'player-tab', header: '접속중인 플레이어', icon: 'fas fa-users', label: '온라인' },
     { id: 'chat-list-tab', header: '채팅', icon: 'fas fa-comment-dots', label: '채팅' },
     { id: 'ranking-tab', header: '랭킹', icon: 'fas fa-trophy', label: '랭킹' },
     { id: 'community-tab', header: '커뮤니티', icon: 'fas fa-users', label: '커뮤니티' },

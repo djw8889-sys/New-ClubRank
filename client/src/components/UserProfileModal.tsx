@@ -27,9 +27,10 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string | null;
+  onStartChat?: (userId: string) => void;
 }
 
-export default function UserProfileModal({ isOpen, onClose, userId }: UserProfileModalProps) {
+export default function UserProfileModal({ isOpen, onClose, userId, onStartChat }: UserProfileModalProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -248,18 +249,38 @@ export default function UserProfileModal({ isOpen, onClose, userId }: UserProfil
               </Card>
             )}
 
-            {/* 친구 추가 버튼 */}
+            {/* 액션 버튼들 */}
             {!isOwnProfile && (
-              <Button 
-                onClick={handleFriendRequest}
-                disabled={friendRequestLoading}
-                className="w-full"
-                size="lg"
-                data-testid="button-friend-request"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                {friendRequestLoading ? '요청 중...' : '+ 친구 추가'}
-              </Button>
+              <div className="space-y-3">
+                {/* 1:1 채팅 신청하기 버튼 */}
+                <Button 
+                  onClick={() => {
+                    if (userId && onStartChat) {
+                      onStartChat(userId);
+                      onClose();
+                    }
+                  }}
+                  className="w-full bg-primary hover:bg-primary/90"
+                  size="lg"
+                  data-testid="button-start-chat"
+                >
+                  <i className="fas fa-comments mr-2" />
+                  1:1 채팅 신청하기
+                </Button>
+                
+                {/* 친구 추가 버튼 */}
+                <Button 
+                  onClick={handleFriendRequest}
+                  disabled={friendRequestLoading}
+                  className="w-full"
+                  size="lg"
+                  variant="outline"
+                  data-testid="button-friend-request"
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {friendRequestLoading ? '요청 중...' : '+ 친구 추가'}
+                </Button>
+              </div>
             )}
           </div>
         ) : (

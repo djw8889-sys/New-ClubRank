@@ -3,6 +3,7 @@ import { increment } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
 import { useFirestoreCollection, useFirestore } from "@/hooks/use-firebase";
 import { usePresence } from "@/hooks/use-presence";
+import { useOnlineUsers } from "@/hooks/use-online-users";
 import { useChat } from "@/hooks/use-chat";
 import { User, Post, Match } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -29,11 +30,12 @@ import UserProfileModal from "./UserProfileModal";
 export default function MainApp() {
   const { appUser, logout } = useAuth();
   const { requestMatch, acceptMatch, rejectMatch, deleteDocument, toggleLike, addComment } = useFirestore();
-  const { onlineUsers } = usePresence();
+  const { onlineUsers: presenceUsers } = usePresence();
+  const { onlineUsers, loading: onlineUsersLoading, refresh: refreshOnlineUsers } = useOnlineUsers();
   const { createOrFindChatRoom, chatRooms } = useChat();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('player-tab');
-  const [mainHeader, setMainHeader] = useState('매치 찾기');
+  const [mainHeader, setMainHeader] = useState('접속중인 플레이어');
   const [showPostModal, setShowPostModal] = useState(false);
   const [showMatchResultModal, setShowMatchResultModal] = useState(false);
   const [showMatchRequestModal, setShowMatchRequestModal] = useState(false);
@@ -54,6 +56,37 @@ export default function MainApp() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [commentInputs, setCommentInputs] = useState<{[postId: string]: string}>({});
   const [showComments, setShowComments] = useState<{[postId: string]: boolean}>({});
+  const [sortBy, setSortBy] = useState<'ntrp' | 'points' | 'distance'>('ntrp');
+  
+  // 안전한 숫자 변환 함수
+  const safeNumber = (value: string | number | undefined | null, defaultValue = 0): number => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? defaultValue : parsed;
+    }
+    return defaultValue;
+  };
+
+  // 정렬된 온라인 사용자 목록
+  const sortedOnlineUsers = [...onlineUsers].sort((a, b) => {
+    switch (sortBy) {
+      case 'ntrp':
+        const aNtrp = safeNumber(a.ntrp);
+        const bNtrp = safeNumber(b.ntrp);
+        // NTRP가 설정되지 않은 사용자는 뒤로
+        if (aNtrp === 0 && bNtrp !== 0) return 1;
+        if (bNtrp === 0 && aNtrp !== 0) return -1;
+        return bNtrp - aNtrp;
+      case 'points':
+        return safeNumber(b.points) - safeNumber(a.points);
+      case 'distance':
+        // 거리순은 현재 비활성화 (위치 정보가 없음)
+        return 0;
+      default:
+        return 0;
+    }
+  });
 
   // Fetch other players (excluding current user)
   const { 
@@ -102,7 +135,7 @@ export default function MainApp() {
   };
 
   const handleMatchRequest = async (targetId: string) => {
-    const targetPlayer = players.find(p => p.id === targetId);
+    const targetPlayer = onlineUsers.find(p => p.id === targetId);
     if (!targetPlayer) return;
     
     setSelectedPlayer(targetPlayer);
@@ -139,28 +172,50 @@ export default function MainApp() {
   // 실시간 접속자와 채팅 시작
   const handleStartChat = async (otherUserId: string) => {
     try {
+      if (!appUser) return;
+      
       const chatRoomId = await createOrFindChatRoom(otherUserId);
       
-      // 채팅 화면으로 이동
-      const otherUser = players.find(p => p.id === otherUserId) || 
-        onlineUsers.find(u => u.userId === otherUserId);
+      // 채팅 상대방 찾기 (onlineUsers에서 먼저 찾고, 없으면 다른 목록에서)
+      let otherUser = onlineUsers.find(u => u.id === otherUserId) || 
+        players.find(p => p.id === otherUserId) || 
+        rankingUsers.find(u => u.id === otherUserId);
       
-      if (otherUser) {
-        setChatOpponent(otherUser as User);
-        setChatMatchId(chatRoomId);
-        setIsNewChatMode(true);
-        setShowChatScreen(true);
+      if (!otherUser) {
+        // 플레이스홀더 사용자 생성 - 나중에 데이터 하이드레이션
+        otherUser = {
+          id: otherUserId,
+          username: "사용자",
+          email: "",
+          photoURL: null,
+          ntrp: "0.0",
+          region: "알 수 없음",
+          age: "0",
+          bio: null,
+          availableTimes: [],
+          points: 0,
+          wins: 0,
+          losses: 0,
+          createdAt: new Date('2025-01-01'),
+          updatedAt: new Date('2025-01-01')
+        };
       }
       
+      // 채팅 화면 열기
+      setChatOpponent(otherUser as User);
+      setChatMatchId(chatRoomId);
+      setIsNewChatMode(true);
+      setShowChatScreen(true);
+      
       toast({
-        title: "채팅방 생성 완료",
-        description: "채팅을 시작할 수 있습니다.",
+        title: "채팅방 입장",
+        description: `${otherUser.username}님과의 채팅을 시작합니다.`,
       });
     } catch (error: any) {
-      console.error("Chat creation error:", error);
+      console.error("Chat start error:", error);
       toast({
         title: "채팅 시작 실패",
-        description: "다시 시도해주세요.",
+        description: "채팅을 시작할 수 없습니다. 다시 시도해주세요.",
         variant: "destructive",
       });
     }
@@ -416,118 +471,157 @@ export default function MainApp() {
 
       {/* Main Content Area */}
       <main className="flex-grow overflow-y-auto bg-muted">
-        {/* Player Discovery Tab */}
+        {/* Online Players Tab */}
         <div className={`tab-content ${activeTab === 'player-tab' ? 'active' : 'hidden'}`}>
           {/* Quick Stats */}
           <div className="bg-background p-4 border-b border-border">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-primary" data-testid="text-stat-nearby-players">
-                  {players.length}
+                <div className="text-2xl font-bold text-primary" data-testid="text-stat-online-players">
+                  {onlineUsers.length}
                 </div>
-                <div className="text-xs text-muted-foreground">주변 플레이어</div>
+                <div className="text-xs text-muted-foreground">접속중인 플레이어</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-accent">0</div>
-                <div className="text-xs text-muted-foreground">대기중 매칭</div>
+                <div className="text-2xl font-bold text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse inline-block mr-1"></div>
+                  실시간
+                </div>
+                <div className="text-xs text-muted-foreground">실시간 매칭</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-green-600">{appUser.wins}</div>
+                <div className="text-2xl font-bold text-accent">{appUser?.wins || 0}</div>
                 <div className="text-xs text-muted-foreground">총 승수</div>
               </div>
             </div>
           </div>
 
-          {/* 현재 접속 중인 플레이어 */}
-          {onlineUsers.length > 0 && (
-            <div className="p-4 bg-background border-b border-border">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-semibold text-foreground flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                  현재 접속 중인 플레이어 ({onlineUsers.length})
-                </h3>
-              </div>
-              <div className="flex space-x-3 overflow-x-auto pb-2">
-                {onlineUsers.map((onlineUser) => {
-                  const playerInfo = players.find(p => p.id === onlineUser.userId);
-                  return (
-                    <div 
-                      key={onlineUser.userId} 
-                      className="flex-shrink-0 bg-muted rounded-lg p-3 min-w-[140px]"
-                      data-testid={`online-user-${onlineUser.userId}`}
-                    >
-                      <div className="text-center">
-                        <div className="relative mb-2">
-                          <img 
-                            src={onlineUser.photoURL || "https://source.boringavatars.com/beam/120/unknown?colors=264653,2a9d8f,e9c46a,f4a261,e76f51"} 
-                            alt={onlineUser.username || "Unknown"} 
-                            className="w-12 h-12 rounded-full mx-auto object-cover"
-                          />
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                        </div>
-                        <p className="text-sm font-medium text-foreground truncate" data-testid={`text-online-username-${onlineUser.userId}`}>
-                          {onlineUser.username || "Unknown"}
-                        </p>
-                        {playerInfo && (
-                          <p className="text-xs text-muted-foreground">NTRP {playerInfo.ntrp}</p>
-                        )}
-                        <button
-                          onClick={() => handleStartChat(onlineUser.userId)}
-                          className="mt-2 bg-primary text-primary-foreground px-3 py-1 rounded-md text-xs hover:bg-primary/90 transition-colors w-full"
-                          data-testid={`button-chat-${onlineUser.userId}`}
-                        >
-                          💬 채팅하기
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Filters */}
+          {/* 정렬 및 새로고침 */}
           <div className="p-4 bg-background border-b border-border">
-            <div className="grid grid-cols-3 gap-3">
-              <select className="p-3 border border-input rounded-lg bg-background text-sm focus:ring-2 focus:ring-ring" data-testid="select-sort-filter">
-                <option value="distance">거리순</option>
-                <option value="ntrp">NTRP순</option>
-                <option value="activity">활동순</option>
-              </select>
-              <select className="p-3 border border-input rounded-lg bg-background text-sm focus:ring-2 focus:ring-ring" data-testid="select-ntrp-filter">
-                <option value="all">모든 NTRP</option>
-                <option value="3.0">3.0</option>
-                <option value="3.5">3.5</option>
-                <option value="4.0">4.0</option>
-              </select>
-              <select className="p-3 border border-input rounded-lg bg-background text-sm focus:ring-2 focus:ring-ring" data-testid="select-time-filter">
-                <option value="all">모든 시간</option>
-                <option>평일 오전</option>
-                <option>평일 오후</option>
-                <option>주말 오전</option>
-                <option>주말 오후</option>
-              </select>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value as 'ntrp' | 'points' | 'distance')}
+                  className="p-2 border border-input rounded-lg bg-background text-sm focus:ring-2 focus:ring-ring" 
+                  data-testid="select-sort-online-users"
+                >
+                  <option value="ntrp">NTRP 순</option>
+                  <option value="points">포인트 순</option>
+                  <option value="distance" disabled>거리 순 (비활성)</option>
+                </select>
+                <span className="text-xs text-muted-foreground">
+                  {sortBy === 'ntrp' ? '높은 실력순' : sortBy === 'points' ? '높은 포인트순' : '거리 가까운 순'}
+                </span>
+              </div>
+              <button 
+                onClick={refreshOnlineUsers}
+                className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+                title="목록 새로고침"
+                data-testid="button-refresh-online-users"
+              >
+                <i className="fas fa-sync-alt" />
+              </button>
             </div>
           </div>
 
-          {/* Player Cards */}
+          {/* 실시간 접속자 목록 */}
           <div className="p-4 space-y-4">
-            {playersLoading ? (
+            {onlineUsersLoading ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-4">
                 <LoadingSpinner size="lg" />
-                <p className="text-muted-foreground text-sm">플레이어 목록을 불러오는 중...</p>
+                <p className="text-muted-foreground text-sm">접속중인 플레이어를 불러오는 중...</p>
               </div>
-            ) : players.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8" data-testid="text-no-players">
-                아직 다른 플레이어가 없어요.
-              </p>
+            ) : sortedOnlineUsers.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <i className="fas fa-users text-2xl text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground mb-2" data-testid="text-no-online-players">
+                  현재 접속중인 플레이어가 없습니다
+                </p>
+                <p className="text-xs text-muted-foreground mb-4">
+                  다른 플레이어들이 접속할 때까지 잠시만 기다려주세요
+                </p>
+                <button 
+                  onClick={refreshOnlineUsers}
+                  className="text-primary hover:text-primary/80 text-sm font-medium"
+                  data-testid="button-refresh-no-players"
+                >
+                  <i className="fas fa-sync-alt mr-1" />
+                  다시 확인하기
+                </button>
+              </div>
             ) : (
-              players.map((player) => (
-                <PlayerCard
-                  key={player.id}
-                  player={player}
-                  onMatchRequest={handleMatchRequest}
-                />
+              sortedOnlineUsers.map((user) => (
+                <div 
+                  key={user.id}
+                  className="bg-background rounded-xl border border-border p-4 hover:bg-muted transition-colors cursor-pointer"
+                  data-testid={`online-player-card-${user.id}`}
+                >
+                  <div className="flex items-center space-x-4">
+                    {/* 프로필 이미지 */}
+                    <div className="relative">
+                      <img 
+                        src={getAvatarSrc(user.photoURL, user, 120)} 
+                        alt={user.username} 
+                        className="w-16 h-16 rounded-full object-cover border-2 border-border cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleUserProfileClick(user.id)}
+                        data-testid={`img-online-player-${user.id}`}
+                      />
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+                    </div>
+                    
+                    {/* 사용자 정보 */}
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 
+                          className="font-bold text-foreground cursor-pointer hover:text-primary transition-colors" 
+                          onClick={() => handleUserProfileClick(user.id)}
+                          data-testid={`text-online-player-name-${user.id}`}
+                        >
+                          {user.username}
+                        </h3>
+                        <span className="text-xs text-muted-foreground">{user.region}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                          NTRP {user.ntrp}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold ${calculateTier(user.points, user.wins, user.losses).color} ${calculateTier(user.points, user.wins, user.losses).bgColor}`}>
+                          <i className="fas fa-medal mr-1" />
+                          {calculateTier(user.points, user.wins, user.losses).name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          매너점수: {(user.mannerScore ?? 5).toFixed(1)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {user.wins}승 {user.losses}패 • {user.points}P
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleStartChat(user.id)}
+                            className="bg-primary text-primary-foreground px-3 py-1 rounded-md text-xs hover:bg-primary/90 transition-colors"
+                            data-testid={`button-chat-online-${user.id}`}
+                          >
+                            💬 1:1 채팅
+                          </button>
+                          <button
+                            onClick={() => handleMatchRequest(user.id)}
+                            className="bg-accent text-accent-foreground px-3 py-1 rounded-md text-xs hover:bg-accent/90 transition-colors"
+                            data-testid={`button-match-request-online-${user.id}`}
+                          >
+                            ⚾ 매치 신청
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))
             )}
           </div>
@@ -1231,6 +1325,7 @@ export default function MainApp() {
         isOpen={showUserProfileModal} 
         onClose={handleCloseUserProfileModal}
         userId={selectedUserId}
+        onStartChat={handleStartChat}
       />
     </div>
   );
