@@ -41,14 +41,47 @@ export interface Chat {
   createdAt: Date;
 }
 
+// 1:1 채팅을 위한 새로운 인터페이스들
+export interface ChatRoom {
+  id: string;
+  participants: string[]; // 참여자 ID 배열 (항상 2명)
+  lastMessage?: string;
+  lastMessageAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Message {
+  id: string;
+  chatRoomId: string;
+  senderId: string;
+  content: string;
+  createdAt: Date;
+}
+
+export interface Participant {
+  id: string;
+  chatRoomId: string;
+  userId: string;
+  joinedAt: Date;
+}
+
 export interface Post {
   id: string;
   authorId: string;
   title: string;
   content: string;
-  likes: number;
+  likes: string[]; // 좋아요한 사용자 ID 배열
+  comments: Comment[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface Comment {
+  id: string;
+  authorId: string;
+  content: string;
+  createdAt: Date;
 }
 
 // Input types for creating new records (omitting auto-generated fields)
@@ -83,5 +116,21 @@ export interface InsertChat {
 export interface InsertPost {
   authorId: string;
   title: string;
+  content: string;
+}
+
+// 새로운 채팅 관련 Insert 타입들
+export interface InsertChatRoom {
+  participants: string[];
+}
+
+export interface InsertMessage {
+  chatRoomId: string;
+  senderId: string;
+  content: string;
+}
+
+export interface InsertComment {
+  authorId: string;
   content: string;
 }
