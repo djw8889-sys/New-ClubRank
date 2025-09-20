@@ -740,13 +740,19 @@ export default function MainApp() {
                     data-testid={`ranking-item-${index + 1}`}
                   >
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        index === 0 ? 'bg-yellow-500 text-white' :
-                        index === 1 ? 'bg-gray-400 text-white' :
-                        index === 2 ? 'bg-amber-600 text-white' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {index + 1}
+                      <div 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold leading-none ${
+                          index === 0 ? 'bg-yellow-500 text-white' :
+                          index === 1 ? 'bg-gray-400 text-white' :
+                          index === 2 ? 'bg-amber-600 text-white' :
+                          'bg-muted text-muted-foreground'
+                        }`}
+                        aria-label={`순위 ${index + 1}`}
+                        title={`${index + 1}위`}
+                        data-testid={`rank-badge-${user.id}`}
+                      >
+                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                        <span className="sr-only">{index + 1}위</span>
                       </div>
                       <img 
                         src={user.photoURL || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150"} 
