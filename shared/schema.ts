@@ -19,6 +19,7 @@ export interface User {
   mannerScoreSum: number; // 매너 점수 합계
   tier?: string; // Calculated tier based on performance
   role?: 'admin' | 'user'; // User role for permissions
+  isProfileComplete?: boolean; // 프로필 설정 완료 여부
   createdAt: Date;
   updatedAt: Date;
 }

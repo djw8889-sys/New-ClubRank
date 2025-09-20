@@ -77,6 +77,7 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
         wins: 0,
         losses: 0,
         mannerScore: 5, // 기본 매너 점수
+        isProfileComplete: true, // 프로필 설정 완료
       };
 
       await updateAppUser(userData);

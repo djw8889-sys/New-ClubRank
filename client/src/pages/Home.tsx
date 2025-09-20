@@ -18,7 +18,7 @@ export default function Home() {
 
     if (!user) {
       setCurrentView('login');
-    } else if (!appUser) {
+    } else if (!appUser || appUser.isProfileComplete === false) {
       setCurrentView('profile-setup');
     } else {
       setCurrentView('main');
@@ -28,7 +28,7 @@ export default function Home() {
   const handleSplashComplete = () => {
     if (!user) {
       setCurrentView('login');
-    } else if (!appUser) {
+    } else if (!appUser || appUser.isProfileComplete === false) {
       setCurrentView('profile-setup');
     } else {
       setCurrentView('main');

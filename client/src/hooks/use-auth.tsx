@@ -77,7 +77,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log("Setting up Firebase Auth state listener...");
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("🔥 Firebase Auth state changed:", {
+        hasUser: !!firebaseUser,
+        uid: firebaseUser?.uid,
+        email: firebaseUser?.email,
+        displayName: firebaseUser?.displayName
+      });
+      
       setUser(firebaseUser);
       
       if (firebaseUser) {
@@ -85,25 +94,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Check for redirect result first
           const result = await getRedirectResult(auth);
           if (result?.user) {
-            console.log("Google sign-in successful:", result.user);
+            console.log("✅ Google redirect sign-in successful:", result.user.email);
           }
 
+          console.log("📄 Checking Firestore user document...");
+          
           // Get user data from Firestore
           const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
           if (userDoc.exists()) {
+            console.log("✅ Found existing user document:", userDoc.data());
             setAppUser(userDoc.data() as AppUser);
           } else {
-            setAppUser(null); // User needs to complete profile setup
+            console.log("⚠️ No user document found - creating basic profile for new user");
+            
+            // 새 사용자를 위한 기본 사용자 문서 생성 (프로필 설정 필요로 표시)
+            const basicUserData: AppUser = {
+              id: firebaseUser.uid,
+              username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "사용자",
+              email: firebaseUser.email || "",
+              photoURL: firebaseUser.photoURL,
+              ntrp: "0.0", // 프로필 설정에서 업데이트될 예정
+              region: "",
+              age: "0",
+              bio: null,
+              availableTimes: [],
+              points: 1000, // 기본 포인트
+              wins: 0,
+              losses: 0,
+              isProfileComplete: false, // 프로필 설정 완료 여부
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            
+            try {
+              await setDoc(doc(db, "users", firebaseUser.uid), basicUserData);
+              console.log("✅ Created basic user document (profile incomplete):", basicUserData);
+              setAppUser(basicUserData);
+            } catch (createError) {
+              console.error("❌ Failed to create user document:", createError);
+              setAppUser(null); // 사용자는 프로필 설정 화면으로 이동하게 됨
+            }
           }
         } catch (error) {
-          console.error("Auth state change error:", error);
+          console.error("❌ Auth state change error:", error);
           setAppUser(null);
         }
       } else {
+        console.log("🚪 User logged out");
         setAppUser(null);
       }
       
       setLoading(false);
+      console.log("🏁 Auth state processing complete");
     });
 
     return unsubscribe;
