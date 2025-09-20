@@ -35,7 +35,7 @@ export default function MainApp() {
   const { createOrFindChatRoom, chatRooms } = useChat();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('player-tab');
-  const [mainHeader, setMainHeader] = useState('접속중인 플레이어');
+  const [mainHeader, setMainHeader] = useState('현재 접속 중인 플레이어');
   const [showPostModal, setShowPostModal] = useState(false);
   const [showMatchResultModal, setShowMatchResultModal] = useState(false);
   const [showMatchRequestModal, setShowMatchRequestModal] = useState(false);
