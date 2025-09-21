@@ -20,7 +20,7 @@ import TierProgressCard from "./TierProgressCard";
 import AdminPanel from "./AdminPanel";
 import AdminPromotion from "./AdminPromotion";
 import FeedbackModal from "./FeedbackModal";
-import MatchPointLogo from "./MatchPointLogo";
+import ClubRankLogo from "./ClubRankLogo";
 import ProfileEditModal from "./ProfileEditModal";
 import MatchHistoryModal from "./MatchHistoryModal";
 import PointChargeModal from "./PointChargeModal";
@@ -440,7 +440,7 @@ export default function MainApp() {
       <header className="bg-background border-b border-border sticky top-0 z-20">
         <div className="flex justify-between items-center p-4">
           <div className="flex items-center space-x-3">
-            <MatchPointLogo size="sm" className="bg-transparent" />
+            <ClubRankLogo size="sm" className="bg-transparent" />
             <h1 className="text-xl font-bold text-foreground" data-testid="text-main-header">
               {mainHeader}
             </h1>

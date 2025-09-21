@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import MatchPointLogo from "./MatchPointLogo";
+import ClubRankLogo from "./ClubRankLogo";
 import FirebaseSetupGuide from "./FirebaseSetupGuide";
 
 export default function LoginScreen() {
@@ -50,9 +50,9 @@ export default function LoginScreen() {
       {/* Hero section with logo */}
       <div className="h-1/2 bg-gradient-to-br from-green-500 to-green-600 relative flex flex-col items-center justify-center">
         <div className="text-center text-white">
-          <MatchPointLogo size="xl" variant="white" className="mx-auto mb-6 bg-white/20" />
-          <h1 className="text-4xl font-bold mb-2">Match Point</h1>
-          <p className="text-green-100 text-lg">당신의 테니스 파트너를 찾아보세요</p>
+          <ClubRankLogo size="xl" variant="white" className="mx-auto mb-6 bg-white/20" />
+          <h1 className="text-4xl font-bold mb-2">클럽 랭크</h1>
+          <p className="text-green-100 text-lg">우리 동호회를 위한 랭킹 시스템</p>
         </div>
       </div>
       
@@ -60,15 +60,15 @@ export default function LoginScreen() {
         <div className="space-y-4 mb-8">
           <div className="flex items-center space-x-3 text-gray-600">
             <i className="fas fa-users text-green-600" />
-            <span className="text-sm">1:1 개인 매칭 시스템</span>
+            <span className="text-sm">클럽 간 교류전 & 랭킹</span>
           </div>
           <div className="flex items-center space-x-3 text-gray-600">
             <i className="fas fa-map-marker-alt text-green-600" />
-            <span className="text-sm">지역별 파트너 찾기</span>
+            <span className="text-sm">정기 모임 & 대진표 자동 생성</span>
           </div>
           <div className="flex items-center space-x-3 text-gray-600">
             <i className="fas fa-trophy text-green-600" />
-            <span className="text-sm">랭킹 & 포인트 시스템</span>
+            <span className="text-sm">데이터 기반 클럽 관리</span>
           </div>
         </div>
         

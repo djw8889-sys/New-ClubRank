@@ -47,7 +47,7 @@ export default function ShopModal({ isOpen, onClose }: ShopModalProps) {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900">
               <i className="fas fa-store mr-2 text-green-600" />
-              Match Point 상점
+              클럽 랭크 상점
             </h2>
             <button
               onClick={onClose}

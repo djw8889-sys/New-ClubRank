@@ -84,7 +84,7 @@ export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenPro
       
       toast({
         title: "프로필 설정 완료",
-        description: "매칭 서비스를 시작할 수 있습니다!",
+        description: "이제 클럽 활동을 시작할 수 있습니다!",
       });
 
       onComplete();
