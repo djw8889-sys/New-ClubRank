@@ -1,5 +1,50 @@
-// TypeScript types for the Firebase-based tennis matching app
-// Note: This app uses Firebase Firestore, not PostgreSQL
+// Database schema for Club Rank - Tennis club management platform
+// Supporting both PostgreSQL (Drizzle ORM) and Firebase Firestore
+
+import { pgTable, serial, varchar, text, integer, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { createInsertSchema } from 'drizzle-zod';
+import { z } from 'zod';
+
+// =============================================================================
+// DRIZZLE ORM TABLE DEFINITIONS (PostgreSQL)
+// =============================================================================
+
+// Clubs table - Core club information
+export const clubs = pgTable('clubs', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  logoUrl: text('logo_url'),
+  bannerUrl: text('banner_url'),
+  description: text('description'),
+  primaryColor: varchar('primary_color', { length: 7 }).default('#22c55e'), // 기본 녹색
+  rankingPoints: integer('ranking_points').default(1000), // ELO 시작점수
+  region: varchar('region', { length: 50 }).notNull(), // 지역
+  establishedAt: timestamp('established_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// =============================================================================
+// ZOD SCHEMAS FOR VALIDATION
+// =============================================================================
+
+// Insert schema for clubs (omitting auto-generated fields)
+export const insertClubSchema = createInsertSchema(clubs).omit({
+  id: true,
+  establishedAt: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Insert type from schema
+export type InsertClub = z.infer<typeof insertClubSchema>;
+
+// Select type from table
+export type Club = typeof clubs.$inferSelect;
+
+// =============================================================================
+// FIREBASE FIRESTORE INTERFACES (Legacy - transitioning to Drizzle)
+// =============================================================================
 
 export interface User {
   id: string;
@@ -161,4 +206,33 @@ export interface InsertFriend {
   userId1: string;
   userId2: string;
   status: 'pending' | 'accepted';
+}
+
+// =============================================================================
+// CLUB-RELATED FIREBASE INTERFACES (Will be migrated to Drizzle)
+// =============================================================================
+
+// Temporary Club interface for Firebase compatibility
+export interface ClubFirebase {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  description?: string | null;
+  primaryColor: string;
+  rankingPoints: number;
+  region: string;
+  establishedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InsertClubFirebase {
+  name: string;
+  logoUrl?: string | null;
+  bannerUrl?: string | null;
+  description?: string | null;
+  primaryColor?: string;
+  rankingPoints?: number;
+  region: string;
 }
