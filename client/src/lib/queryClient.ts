@@ -17,9 +17,26 @@ export async function apiRequest(
   data?: unknown | undefined,
 ): Promise<Response> {
   try {
+    // Get Firebase ID token
+    let idToken = null;
+    try {
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      if (auth.currentUser) {
+        idToken = await auth.currentUser.getIdToken();
+      }
+    } catch (error) {
+      console.warn('Failed to get Firebase ID token:', error);
+    }
+
+    const headers: Record<string, string> = {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}),
+    };
+
     const res = await fetch(url, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      headers,
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
     });
@@ -43,7 +60,24 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     try {
+      // Get Firebase ID token for authentication
+      let idToken = null;
+      try {
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth();
+        if (auth.currentUser) {
+          idToken = await auth.currentUser.getIdToken();
+        }
+      } catch (error) {
+        console.warn('Failed to get Firebase ID token for query:', error);
+      }
+
+      const headers: Record<string, string> = {
+        ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}),
+      };
+
       const res = await fetch(queryKey.join("/") as string, {
+        headers,
         credentials: "include",
       });
 

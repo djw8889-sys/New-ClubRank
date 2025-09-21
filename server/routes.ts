@@ -4,6 +4,7 @@ import { createServer, type Server } from "http";
 import { adminDb, verifyFirebaseToken } from "./firebase-admin.js";
 import { FieldValue } from 'firebase-admin/firestore';
 import { registerUserRoutes } from "./routes/users.js";
+import { registerClubRoutes } from "./routes/clubs.js";
 
 // 에러 코드 상수
 const ERROR_CODES = {
@@ -15,15 +16,24 @@ const ERROR_CODES = {
   DUPLICATE_FRIENDSHIP: 'DUPLICATE_FRIENDSHIP',
 } as const;
 
+interface AuthenticatedRequest extends Express.Request {
+  user: {
+    uid: string;
+  };
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // JSON parsing middleware for API routes
   app.use(express.json());
   
   // Users 라우트 등록
   registerUserRoutes(app);
+  
+  // Club 라우트 등록
+  registerClubRoutes(app);
 
   // 친구 요청 API
-  app.post('/api/friends/request', verifyFirebaseToken, async (req: any, res) => {
+  app.post('/api/friends/request', verifyFirebaseToken, async (req: AuthenticatedRequest, res) => {
     try {
       const { targetUserId } = req.body;
       const requesterId = req.user.uid;
@@ -63,17 +73,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pairKey,
         message: '친구 요청이 전송되었습니다.' 
       });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('친구 요청 오류:', error);
       if (error instanceof Error) {
         if (error.message === ERROR_CODES.DUPLICATE_FRIENDSHIP) {
           return res.status(409).json({ error: '이미 친구 관계가 존재합니다.' });
         }
         // Firestore 트랜잭션 충돌 처리 (GRPC 코드 기반)
-        if ((error as any).code === 10) { // ABORTED
+        const firebaseError = error as { code?: number };
+        if (firebaseError.code === 10) { // ABORTED
           return res.status(409).json({ error: '친구 요청이 이미 처리되었습니다.' });
         }
-        if ((error as any).code === 6) { // ALREADY_EXISTS
+        if (firebaseError.code === 6) { // ALREADY_EXISTS
           return res.status(409).json({ error: '친구 요청이 이미 존재합니다.' });
         }
       }
@@ -82,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // 친구 수락 API
-  app.post('/api/friends/accept', verifyFirebaseToken, async (req: any, res) => {
+  app.post('/api/friends/accept', verifyFirebaseToken, async (req: AuthenticatedRequest, res) => {
     try {
       const { pairKey } = req.body;
       const currentUserId = req.user.uid;

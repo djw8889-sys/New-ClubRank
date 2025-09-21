@@ -27,6 +27,7 @@ import MatchHistoryModal from "./MatchHistoryModal";
 import PointChargeModal from "./PointChargeModal";
 import ShopModal from "./ShopModal";
 import UserProfileModal from "./UserProfileModal";
+import MyClubTabContent from "./MyClubTabContent";
 
 export default function MainApp() {
   const { appUser, logout } = useAuth();
@@ -512,26 +513,7 @@ export default function MainApp() {
         {/* Online Players Tab */}
         {/* My Club Tab */}
         <div className={`tab-content ${activeTab === 'my-club-tab' ? 'active' : 'hidden'}`}>
-          <div className="bg-gradient-to-r from-primary to-emerald-600 p-6 text-white">
-            <h2 className="text-2xl font-bold mb-2">🏠 내 클럽</h2>
-            <p className="opacity-90">클럽 활동의 모든 것을 관리하세요</p>
-          </div>
-          
-          {/* Club Status */}
-          <div className="p-4">
-            <div className="bg-background rounded-xl p-6 text-center border border-border">
-              <div className="text-6xl mb-4">🛡️</div>
-              <h3 className="text-lg font-semibold mb-2">클럽 기능 준비 중</h3>
-              <p className="text-muted-foreground mb-4">
-                클럽 생성, 회원 관리, 정기 모임 등의 기능이<br />
-                곧 추가될 예정입니다.
-              </p>
-              <div className="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
-                <i className="fas fa-clock mr-2" />
-                2025년 상반기 오픈 예정
-              </div>
-            </div>
-          </div>
+          <MyClubTabContent />
         </div>
 
         {/* Individual Matching Tab */}
