@@ -24,6 +24,18 @@ export const clubs = pgTable('clubs', {
   updatedAt: timestamp('updated_at').defaultNow()
 });
 
+// Club Members table - User-Club relationship with roles
+export const clubMembers = pgTable('club_members', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(), // Firebase UID 호환
+  clubId: integer('club_id').notNull(),
+  role: varchar('role', { length: 20 }).notNull().default('member'), // 'owner', 'admin', 'member'
+  joinedAt: timestamp('joined_at').defaultNow(),
+  isActive: boolean('is_active').default(true), // 활성 멤버 여부
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
 // =============================================================================
 // ZOD SCHEMAS FOR VALIDATION
 // =============================================================================
@@ -36,11 +48,23 @@ export const insertClubSchema = createInsertSchema(clubs).omit({
   updatedAt: true
 });
 
-// Insert type from schema
-export type InsertClub = z.infer<typeof insertClubSchema>;
+// Insert schema for club members
+export const insertClubMemberSchema = createInsertSchema(clubMembers).omit({
+  id: true,
+  joinedAt: true,
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  role: z.enum(['owner', 'admin', 'member']).default('member')
+});
 
-// Select type from table
+// Insert types from schemas
+export type InsertClub = z.infer<typeof insertClubSchema>;
+export type InsertClubMember = z.infer<typeof insertClubMemberSchema>;
+
+// Select types from tables
 export type Club = typeof clubs.$inferSelect;
+export type ClubMember = typeof clubMembers.$inferSelect;
 
 // =============================================================================
 // FIREBASE FIRESTORE INTERFACES (Legacy - transitioning to Drizzle)
@@ -235,4 +259,23 @@ export interface InsertClubFirebase {
   primaryColor?: string;
   rankingPoints?: number;
   region: string;
+}
+
+// Club Members Firebase interface
+export interface ClubMemberFirebase {
+  id: string;
+  userId: string;
+  clubId: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InsertClubMemberFirebase {
+  userId: string;
+  clubId: string;
+  role?: 'owner' | 'admin' | 'member';
+  isActive?: boolean;
 }
