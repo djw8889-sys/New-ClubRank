@@ -34,8 +34,8 @@ export default function MainApp() {
   const { onlineUsers, loading: onlineUsersLoading, refresh: refreshOnlineUsers } = useOnlineUsers();
   const { createOrFindChatRoom, chatRooms } = useChat();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('player-tab');
-  const [mainHeader, setMainHeader] = useState('현재 접속 중인 플레이어');
+  const [activeTab, setActiveTab] = useState('my-club-tab');
+  const [mainHeader, setMainHeader] = useState('내 클럽');
   const [showPostModal, setShowPostModal] = useState(false);
   const [showMatchResultModal, setShowMatchResultModal] = useState(false);
   const [showMatchRequestModal, setShowMatchRequestModal] = useState(false);
@@ -472,7 +472,32 @@ export default function MainApp() {
       {/* Main Content Area */}
       <main className="flex-grow overflow-y-auto bg-muted">
         {/* Online Players Tab */}
-        <div className={`tab-content ${activeTab === 'player-tab' ? 'active' : 'hidden'}`}>
+        {/* My Club Tab */}
+        <div className={`tab-content ${activeTab === 'my-club-tab' ? 'active' : 'hidden'}`}>
+          <div className="bg-gradient-to-r from-primary to-emerald-600 p-6 text-white">
+            <h2 className="text-2xl font-bold mb-2">🏠 내 클럽</h2>
+            <p className="opacity-90">클럽 활동의 모든 것을 관리하세요</p>
+          </div>
+          
+          {/* Club Status */}
+          <div className="p-4">
+            <div className="bg-background rounded-xl p-6 text-center border border-border">
+              <div className="text-6xl mb-4">🛡️</div>
+              <h3 className="text-lg font-semibold mb-2">클럽 기능 준비 중</h3>
+              <p className="text-muted-foreground mb-4">
+                클럽 생성, 회원 관리, 정기 모임 등의 기능이<br />
+                곧 추가될 예정입니다.
+              </p>
+              <div className="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
+                <i className="fas fa-clock mr-2" />
+                2025년 상반기 오픈 예정
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Individual Matching Tab */}
+        <div className={`tab-content ${activeTab === 'individual-matching-tab' ? 'active' : 'hidden'}`}>
           {/* Quick Stats */}
           <div className="bg-background p-4 border-b border-border">
             <div className="grid grid-cols-3 gap-4 text-center">
@@ -628,7 +653,32 @@ export default function MainApp() {
         </div>
 
         {/* Chat List Tab - Now showing both chat rooms and matches */}
-        <div className={`tab-content ${activeTab === 'chat-list-tab' ? 'active' : 'hidden'}`}>
+        {/* Club Search Tab */}
+        <div className={`tab-content ${activeTab === 'club-search-tab' ? 'active' : 'hidden'}`}>
+          <div className="bg-gradient-to-r from-primary to-emerald-600 p-6 text-white">
+            <h2 className="text-2xl font-bold mb-2">🛡️ 클럽 찾기</h2>
+            <p className="opacity-90">다른 클럽과 교류전을 신청하세요</p>
+          </div>
+          
+          {/* Search Functionality */}
+          <div className="p-4">
+            <div className="bg-background rounded-xl p-6 text-center border border-border">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-lg font-semibold mb-2">클럽 검색 기능 준비 중</h3>
+              <p className="text-muted-foreground mb-4">
+                지역별 클럽 검색, 클럽 프로필 보기,<br />
+                교류전 신청 기능이 곧 추가될 예정입니다.
+              </p>
+              <div className="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
+                <i className="fas fa-clock mr-2" />
+                2025년 상반기 오픈 예정
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Removed old Chat List Tab content */}
+        <div className={`tab-content ${activeTab === 'chat-list-tab' ? 'active' : 'hidden'}`} style={{display: 'none'}}>
           {/* Chat Rooms Section */}
           {chatRooms.length > 0 && (
             <div className="p-4 border-b border-border">
@@ -821,12 +871,13 @@ export default function MainApp() {
         </div>
 
         {/* Ranking Tab */}
-        <div className={`tab-content ${activeTab === 'ranking-tab' ? 'active' : 'hidden'}`}>
+        {/* Club Ranking Tab */}
+        <div className={`tab-content ${activeTab === 'club-ranking-tab' ? 'active' : 'hidden'}`}>
           <div className="bg-gradient-to-r from-primary to-emerald-600 p-4 text-white">
-            <h2 className="text-lg font-bold mb-2">2024 Q1 시즌 랭킹</h2>
+            <h2 className="text-lg font-bold mb-2">🏆 클럽 랭킹</h2>
             <div className="text-sm opacity-90">
-              <p>시즌 종료까지 <span className="font-bold">23일</span> 남음</p>
-              <p>상위 3명에게 특별 리워드 지급!</p>
+              <p>이번 주 <span className="font-bold">우리 동네 최강 클럽</span>은?</p>
+              <p>클럽 간 교류전으로 랭킹을 올려보세요!</p>
             </div>
           </div>
           <div className="p-4">
@@ -902,7 +953,8 @@ export default function MainApp() {
         </div>
 
         {/* Community Tab */}
-        <div className={`tab-content ${activeTab === 'community-tab' ? 'active' : 'hidden'}`}>
+        {/* Removed old Community Tab content */}
+        <div className={`tab-content ${activeTab === 'community-tab' ? 'active' : 'hidden'}`} style={{display: 'none'}}>
           <div className="p-4 border-b border-border bg-background">
             <button 
               onClick={handleNewPost}
@@ -1097,7 +1149,8 @@ export default function MainApp() {
         </div>
 
         {/* Profile Tab */}
-        <div className={`tab-content ${activeTab === 'profile-tab' ? 'active' : 'hidden'}`}>
+        {/* My Info Tab */}
+        <div className={`tab-content ${activeTab === 'my-info-tab' ? 'active' : 'hidden'}`}>
           {/* Profile Header */}
           <div className="bg-gradient-to-r from-primary to-emerald-600 p-6 text-white">
             <div className="flex items-center space-x-4">

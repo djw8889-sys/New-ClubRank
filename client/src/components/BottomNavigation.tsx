@@ -5,11 +5,11 @@ interface BottomNavigationProps {
 
 export default function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
   const tabs = [
-    { id: 'player-tab', header: '현재 접속 중인 플레이어', icon: 'fas fa-users', label: '매칭' },
-    { id: 'chat-list-tab', header: '채팅', icon: 'fas fa-comment-dots', label: '채팅' },
-    { id: 'ranking-tab', header: '랭킹', icon: 'fas fa-trophy', label: '랭킹' },
-    { id: 'community-tab', header: '커뮤니티', icon: 'fas fa-users', label: '커뮤니티' },
-    { id: 'profile-tab', header: '프로필', icon: 'fas fa-user-circle', label: '프로필' },
+    { id: 'my-club-tab', header: '내 클럽', icon: '🏠', label: '내 클럽' },
+    { id: 'individual-matching-tab', header: '현재 접속 중인 플레이어', icon: '🎾', label: '개인 매칭' },
+    { id: 'club-search-tab', header: '클럽 찾기', icon: '🛡️', label: '클럽 찾기' },
+    { id: 'club-ranking-tab', header: '클럽 랭킹', icon: '🏆', label: '클럽 랭킹' },
+    { id: 'my-info-tab', header: '내 정보', icon: '👤', label: '내 정보' },
   ];
 
   return (
@@ -23,11 +23,8 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
           }`}
           data-testid={`button-tab-${tab.id}`}
         >
-          <div className={tab.id === 'chat-list-tab' ? 'relative' : ''}>
-            <i className={`${tab.icon} text-lg`} />
-            {tab.id === 'chat-list-tab' && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full" />
-            )}
+          <div className="flex justify-center items-center">
+            <span className="text-lg">{tab.icon}</span>
           </div>
           <span className="block text-xs mt-1">{tab.label}</span>
         </button>
