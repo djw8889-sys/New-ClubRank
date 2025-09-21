@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { increment } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
 import { useFirestoreCollection, useFirestore } from "@/hooks/use-firebase";
@@ -7,6 +7,7 @@ import { useOnlineUsers } from "@/hooks/use-online-users";
 import { useChat } from "@/hooks/use-chat";
 import { User, Post, Match } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { calculateTier, getTierProgress } from "@/utils/tierCalculator";
 import { getAvatarSrc } from "@/utils/avatar";
 import PlayerCard from "./PlayerCard";
@@ -34,8 +35,43 @@ export default function MainApp() {
   const { onlineUsers, loading: onlineUsersLoading, refresh: refreshOnlineUsers } = useOnlineUsers();
   const { createOrFindChatRoom, chatRooms } = useChat();
   const { toast } = useToast();
+  const [location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('my-club-tab');
   const [mainHeader, setMainHeader] = useState('내 클럽');
+  
+  // 탭 ID와 헤더 매핑
+  const tabConfig = {
+    'my-club-tab': '내 클럽',
+    'individual-matching-tab': '현재 접속 중인 플레이어',
+    'club-search-tab': '클럽 찾기',
+    'club-ranking-tab': '클럽 랭킹',
+    'my-info-tab': '내 정보'
+  };
+  
+  // URL에서 탭 추출 (hash 기반)
+  const getTabFromUrl = (): string => {
+    const hash = window.location.hash.slice(1); // # 제거
+    return hash && Object.keys(tabConfig).includes(hash) ? hash : 'my-club-tab';
+  };
+  
+  // URL 초기화 및 브라우저 뒤로/앞으로 지원
+  useEffect(() => {
+    const handleHashChange = () => {
+      const tabFromUrl = getTabFromUrl();
+      setActiveTab(tabFromUrl);
+      setMainHeader(tabConfig[tabFromUrl as keyof typeof tabConfig]);
+    };
+    
+    // 초기 로드 시 URL에서 탭 설정
+    handleHashChange();
+    
+    // 브라우저 뒤로/앞으로 버튼 지원
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
   const [showPostModal, setShowPostModal] = useState(false);
   const [showMatchResultModal, setShowMatchResultModal] = useState(false);
   const [showMatchRequestModal, setShowMatchRequestModal] = useState(false);
@@ -132,6 +168,8 @@ export default function MainApp() {
   const handleTabChange = (tab: string, header: string) => {
     setActiveTab(tab);
     setMainHeader(header);
+    // URL 업데이트 (hash 사용)
+    window.location.hash = tab;
   };
 
   const handleMatchRequest = async (targetId: string) => {
