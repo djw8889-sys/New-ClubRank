@@ -36,6 +36,25 @@ export const clubMembers = pgTable('club_members', {
   updatedAt: timestamp('updated_at').defaultNow()
 });
 
+// Club Matches table - Inter-club match requests and results
+export const clubMatches = pgTable('club_matches', {
+  id: serial('id').primaryKey(),
+  requestingClubId: integer('requesting_club_id').notNull(), // 교류전 신청한 클럽
+  receivingClubId: integer('receiving_club_id').notNull(), // 교류전 요청받은 클럽
+  status: varchar('status', { length: 20 }).notNull().default('pending'), // 'pending', 'accepted', 'rejected', 'completed', 'cancelled'
+  matchDate: timestamp('match_date'), // 예정된 경기 날짜
+  matchLocation: varchar('match_location', { length: 200 }), // 경기 장소
+  matchType: varchar('match_type', { length: 50 }).default('friendly'), // 'friendly', 'tournament', 'league'
+  result: varchar('result', { length: 20 }), // 'requesting_won', 'receiving_won', 'draw'
+  requestingScore: integer('requesting_score').default(0), // 신청 클럽 점수
+  receivingScore: integer('receiving_score').default(0), // 수신 클럽 점수
+  eloChange: integer('elo_change').default(0), // ELO 변화량 (+/- for requesting club)
+  notes: text('notes'), // 경기 관련 메모
+  completedAt: timestamp('completed_at'), // 경기 완료 시간
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
 // =============================================================================
 // ZOD SCHEMAS FOR VALIDATION
 // =============================================================================
@@ -58,13 +77,27 @@ export const insertClubMemberSchema = createInsertSchema(clubMembers).omit({
   role: z.enum(['owner', 'admin', 'member']).default('member')
 });
 
+// Insert schema for club matches
+export const insertClubMatchSchema = createInsertSchema(clubMatches).omit({
+  id: true,
+  completedAt: true,
+  createdAt: true,
+  updatedAt: true
+}).extend({
+  status: z.enum(['pending', 'accepted', 'rejected', 'completed', 'cancelled']).default('pending'),
+  matchType: z.enum(['friendly', 'tournament', 'league']).default('friendly'),
+  result: z.enum(['requesting_won', 'receiving_won', 'draw']).optional()
+});
+
 // Insert types from schemas
 export type InsertClub = z.infer<typeof insertClubSchema>;
 export type InsertClubMember = z.infer<typeof insertClubMemberSchema>;
+export type InsertClubMatch = z.infer<typeof insertClubMatchSchema>;
 
 // Select types from tables
 export type Club = typeof clubs.$inferSelect;
 export type ClubMember = typeof clubMembers.$inferSelect;
+export type ClubMatch = typeof clubMatches.$inferSelect;
 
 // =============================================================================
 // FIREBASE FIRESTORE INTERFACES (Legacy - transitioning to Drizzle)
@@ -278,4 +311,37 @@ export interface InsertClubMemberFirebase {
   clubId: string;
   role?: 'owner' | 'admin' | 'member';
   isActive?: boolean;
+}
+
+// Club Matches Firebase interface
+export interface ClubMatchFirebase {
+  id: string;
+  requestingClubId: string;
+  receivingClubId: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
+  matchDate?: Date | null;
+  matchLocation?: string | null;
+  matchType: 'friendly' | 'tournament' | 'league';
+  result?: 'requesting_won' | 'receiving_won' | 'draw' | null;
+  requestingScore: number;
+  receivingScore: number;
+  eloChange: number;
+  notes?: string | null;
+  completedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface InsertClubMatchFirebase {
+  requestingClubId: string;
+  receivingClubId: string;
+  status?: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled';
+  matchDate?: Date | null;
+  matchLocation?: string | null;
+  matchType?: 'friendly' | 'tournament' | 'league';
+  result?: 'requesting_won' | 'receiving_won' | 'draw' | null;
+  requestingScore?: number;
+  receivingScore?: number;
+  eloChange?: number;
+  notes?: string | null;
 }
