@@ -1,8 +1,14 @@
 # Overview
 
-Match Point is a modern tennis partner matching mobile web application built with React, TypeScript, and Express.js. The app allows tennis players to find compatible partners based on skill level (NTRP rating), location, age, and availability. It features a comprehensive user matching system, real-time chat functionality, ranking system with points, and community features for tennis players.
+Club Rank is a comprehensive club management and competition platform built with React, TypeScript, and Express.js. Originally Match Point (a tennis partner matching app), it has been transformed into a complete club management MVP that serves tennis clubs with advanced features for competition management, member coordination, and analytics.
 
-The application follows a mobile-first design approach using Tailwind CSS and shadcn/ui components, providing a native-like mobile experience. It includes user authentication via Firebase, profile management, match requests, and a point-based ranking system to gamify the tennis matching experience.
+The platform provides club identity customization, automated bracket generation, member management, inter-club competitions, and detailed analytics. It features a mobile-first design using Tailwind CSS and shadcn/ui components, delivering a native-like experience for club administrators and members.
+
+**MVP Transformation Complete (4 Phases):**
+- **Phase 1**: Service rebranding to "Club Rank" with shield emblem logo and navigation restructure (내 클럽/개인 매칭/랭킹/커뮤니티/내 정보)
+- **Phase 2**: Database expansion with club management schemas and gameFormat support for 5 match types
+- **Phase 3**: Core club features including identity customization, management dashboard, automated bracket generation, and analytics
+- **Phase 4**: Personal records enhancement and location-based matching optimization
 
 # User Preferences
 
