@@ -11,7 +11,7 @@ import LoadingSpinner from "./LoadingSpinner";
 interface ChatScreenProps {
   matchId?: string; // Optional for 1:1 chats
   chatRoomId?: string; // For 1:1 chats
-  opponent: User;
+  opponent?: User; // Made optional to prevent crashes when no opponent selected
   onBack: () => void;
 }
 
@@ -22,6 +22,27 @@ export default function ChatScreen({ matchId, chatRoomId, opponent, onBack }: Ch
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // If no opponent provided, show placeholder screen
+  if (!opponent) {
+    return (
+      <div className="container mx-auto max-w-md min-h-screen bg-background shadow-2xl flex flex-col">
+        <header className="flex items-center justify-between p-4 bg-background border-b border-border">
+          <Button variant="ghost" onClick={onBack} className="p-2" data-testid="button-chat-back">
+            <i className="fas fa-arrow-left" />
+          </Button>
+          <h1 className="font-semibold">채팅</h1>
+          <div className="w-10"></div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <i className="fas fa-user-slash text-4xl mb-4"></i>
+            <p>채팅 상대를 선택해주세요</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // For 1:1 chats, use the new chat system
   const { messages: chatRoomMessages, loading: chatRoomLoading } = useChatMessages(chatRoomId || null);
