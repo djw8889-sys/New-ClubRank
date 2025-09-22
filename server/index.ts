@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -50,9 +52,16 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
+  
+  // Check if built files exist - if so, serve static files even in development
+  // This allows production domains to work with built assets
+  const distPath = path.resolve(import.meta.dirname, "dist/public");
+  const hasBuiltFiles = fs.existsSync(distPath);
+  
+  if (app.get("env") === "development" && !hasBuiltFiles) {
     await setupVite(app, server);
   } else {
+    // Serve static files if in production OR if built files exist
     serveStatic(app);
   }
 
