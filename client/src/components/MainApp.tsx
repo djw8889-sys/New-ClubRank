@@ -44,8 +44,8 @@ export default function MainApp() {
   const tabConfig = {
     'my-club-tab': '내 클럽',
     'individual-matching-tab': '현재 접속 중인 플레이어',
-    'club-search-tab': '클럽 찾기',
-    'club-ranking-tab': '클럽 랭킹',
+    'ranking-tab': '랭킹',
+    'community-tab': '커뮤니티',
     'my-info-tab': '내 정보'
   };
   
@@ -94,6 +94,7 @@ export default function MainApp() {
   const [commentInputs, setCommentInputs] = useState<{[postId: string]: string}>({});
   const [showComments, setShowComments] = useState<{[postId: string]: boolean}>({});
   const [sortBy, setSortBy] = useState<'ntrp' | 'points' | 'distance'>('ntrp');
+  const [rankingSubTab, setRankingSubTab] = useState<'club' | 'individual'>('individual');
   
   // 안전한 숫자 변환 함수
   const safeNumber = (value: string | number | undefined | null, defaultValue = 0): number => {
@@ -235,6 +236,9 @@ export default function MainApp() {
           points: 0,
           wins: 0,
           losses: 0,
+          mannerScore: 5,
+          mannerReviewsCount: 0,
+          mannerScoreSum: 0,
           createdAt: new Date('2025-01-01'),
           updatedAt: new Date('2025-01-01')
         };
@@ -448,6 +452,9 @@ export default function MainApp() {
         points: 0,
         wins: 0,
         losses: 0,
+        mannerScore: 5,
+        mannerReviewsCount: 0,
+        mannerScoreSum: 0,
         createdAt: new Date('2025-01-01'),
         updatedAt: new Date('2025-01-01')
       };
@@ -891,90 +898,140 @@ export default function MainApp() {
         </div>
 
         {/* Ranking Tab */}
-        {/* Club Ranking Tab */}
-        <div className={`tab-content ${activeTab === 'club-ranking-tab' ? 'active' : 'hidden'}`}>
+        <div className={`tab-content ${activeTab === 'ranking-tab' ? 'active' : 'hidden'}`}>
+          {/* 랭킹 탭 헤더 */}
           <div className="bg-gradient-to-r from-primary to-emerald-600 p-4 text-white">
-            <h2 className="text-lg font-bold mb-2">🏆 클럽 랭킹</h2>
+            <h2 className="text-lg font-bold mb-2">🏆 랭킹</h2>
             <div className="text-sm opacity-90">
-              <p>이번 주 <span className="font-bold">우리 동네 최강 클럽</span>은?</p>
-              <p>클럽 간 교류전으로 랭킹을 올려보세요!</p>
+              <p>이번 주 <span className="font-bold">우리 동네 최강</span>은?</p>
+              <p>{rankingSubTab === 'club' ? '클럽 간 교류전으로 랭킹을 올려보세요!' : '개인 매칭으로 랭킹을 올려보세요!'}</p>
             </div>
           </div>
-          <div className="p-4">
-            {rankingLoading ? (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <LoadingSpinner size="lg" />
-                <p className="text-muted-foreground text-sm">랭킹 정보를 불러오는 중...</p>
-              </div>
-            ) : rankingUsers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8" data-testid="text-no-rankings">
-                랭킹 데이터가 없습니다.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {rankingUsers.map((user, index) => (
-                  <div 
-                    key={user.id}
-                    className={`flex items-center p-4 rounded-xl border transition-colors ${
-                      user.id === appUser?.id 
-                        ? 'bg-primary/10 border-primary' 
-                        : 'bg-background border-border hover:bg-muted'
-                    }`}
-                    data-testid={`ranking-item-${index + 1}`}
-                  >
-                    <div className="flex items-center space-x-3 flex-1">
-                      <div 
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold leading-none ${
-                          index === 0 ? 'bg-yellow-500 text-white' :
-                          index === 1 ? 'bg-gray-400 text-white' :
-                          index === 2 ? 'bg-amber-600 text-white' :
-                          'bg-muted text-muted-foreground'
-                        }`}
-                        aria-label={`순위 ${index + 1}`}
-                        title={`${index + 1}위`}
-                        data-testid={`rank-badge-${user.id}`}
-                      >
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
-                        <span className="sr-only">{index + 1}위</span>
-                      </div>
-                      <img 
-                        src={getAvatarSrc(user.photoURL, user, 80)} 
-                        alt={user.username} 
-                        className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => handleUserProfileClick(user.id)}
-                      />
-                      <div className="flex-1">
-                        <p 
-                          className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors" 
-                          data-testid={`text-rank-username-${index + 1}`}
-                          onClick={() => handleUserProfileClick(user.id)}
+
+          {/* 하위 탭 네비게이션 */}
+          <div className="bg-background border-b border-border">
+            <div className="flex">
+              <button
+                onClick={() => setRankingSubTab('individual')}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
+                  rankingSubTab === 'individual'
+                    ? 'text-primary border-b-2 border-primary bg-primary/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+                data-testid="button-individual-ranking-tab"
+              >
+                <i className="fas fa-user mr-2" />
+                개인 랭킹
+              </button>
+              <button
+                onClick={() => setRankingSubTab('club')}
+                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors relative ${
+                  rankingSubTab === 'club'
+                    ? 'text-primary border-b-2 border-primary bg-primary/5'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+                data-testid="button-club-ranking-tab"
+              >
+                <i className="fas fa-shield-alt mr-2" />
+                클럽 랭킹
+              </button>
+            </div>
+          </div>
+          {/* 개인 랭킹 */}
+          {rankingSubTab === 'individual' && (
+            <div className="p-4">
+              {rankingLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                  <LoadingSpinner size="lg" />
+                  <p className="text-muted-foreground text-sm">개인 랭킹 정보를 불러오는 중...</p>
+                </div>
+              ) : rankingUsers.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8" data-testid="text-no-individual-rankings">
+                  개인 랭킹 데이터가 없습니다.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {rankingUsers.map((user, index) => (
+                    <div 
+                      key={user.id}
+                      className={`flex items-center p-4 rounded-xl border transition-colors ${
+                        user.id === appUser?.id 
+                          ? 'bg-primary/10 border-primary' 
+                          : 'bg-background border-border hover:bg-muted'
+                      }`}
+                      data-testid={`individual-ranking-item-${index + 1}`}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        <div 
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold leading-none ${
+                            index === 0 ? 'bg-yellow-500 text-white' :
+                            index === 1 ? 'bg-gray-400 text-white' :
+                            index === 2 ? 'bg-amber-600 text-white' :
+                            'bg-muted text-muted-foreground'
+                          }`}
+                          aria-label={`순위 ${index + 1}`}
+                          title={`${index + 1}위`}
+                          data-testid={`individual-rank-badge-${user.id}`}
                         >
-                          {user.username}
-                          {user.id === appUser?.id && <span className="ml-2 text-xs text-primary font-bold">(나)</span>}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-muted-foreground">NTRP {user.ntrp}</span>
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${calculateTier(user.points, user.wins, user.losses).color} ${calculateTier(user.points, user.wins, user.losses).bgColor}`}>
-                            {calculateTier(user.points, user.wins, user.losses).name}
-                          </span>
-                          <span className="text-sm text-muted-foreground">• {user.region}</span>
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                          <span className="sr-only">{index + 1}위</span>
+                        </div>
+                        <img 
+                          src={getAvatarSrc(user.photoURL, user, 80)} 
+                          alt={user.username} 
+                          className="w-10 h-10 rounded-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleUserProfileClick(user.id)}
+                        />
+                        <div className="flex-1">
+                          <p 
+                            className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors" 
+                            data-testid={`text-individual-rank-username-${index + 1}`}
+                            onClick={() => handleUserProfileClick(user.id)}
+                          >
+                            {user.username}
+                            {user.id === appUser?.id && <span className="ml-2 text-xs text-primary font-bold">(나)</span>}
+                          </p>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-muted-foreground">NTRP {user.ntrp}</span>
+                            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold ${calculateTier(user.points, user.wins, user.losses).color} ${calculateTier(user.points, user.wins, user.losses).bgColor}`}>
+                              {calculateTier(user.points, user.wins, user.losses).name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">• {user.region}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-accent" data-testid={`text-individual-rank-points-${index + 1}`}>{user.points}P</p>
+                          <p className="text-xs text-muted-foreground">{user.wins}승 {user.losses}패</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold text-accent" data-testid={`text-rank-points-${index + 1}`}>{user.points}P</p>
-                        <p className="text-xs text-muted-foreground">{user.wins}승 {user.losses}패</p>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 클럽 랭킹 */}
+          {rankingSubTab === 'club' && (
+            <div className="p-4">
+              <div className="text-center py-12 space-y-4">
+                <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                  <i className="fas fa-shield-alt text-2xl text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground mb-2" data-testid="text-club-ranking-coming-soon">클럽 랭킹 준비 중</h3>
+                  <p className="text-sm text-muted-foreground">
+                    클럽 간 교류전 기능이 완성되면<br />
+                    클럽 랭킹을 확인할 수 있습니다.
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Community Tab */}
-        {/* Removed old Community Tab content */}
-        <div className={`tab-content ${activeTab === 'community-tab' ? 'active' : 'hidden'}`} style={{display: 'none'}}>
+        <div className={`tab-content ${activeTab === 'community-tab' ? 'active' : 'hidden'}`}>
           <div className="p-4 border-b border-border bg-background">
             <button 
               onClick={handleNewPost}

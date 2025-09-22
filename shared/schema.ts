@@ -45,6 +45,7 @@ export const clubMatches = pgTable('club_matches', {
   matchDate: timestamp('match_date'), // 예정된 경기 날짜
   matchLocation: varchar('match_location', { length: 200 }), // 경기 장소
   matchType: varchar('match_type', { length: 50 }).default('friendly'), // 'friendly', 'tournament', 'league'
+  gameFormat: varchar('game_format', { length: 30 }).default('mens_doubles'), // 'mens_singles', 'womens_singles', 'mens_doubles', 'womens_doubles', 'mixed_doubles'
   result: varchar('result', { length: 20 }), // 'requesting_won', 'receiving_won', 'draw'
   requestingScore: integer('requesting_score').default(0), // 신청 클럽 점수
   receivingScore: integer('receiving_score').default(0), // 수신 클럽 점수
@@ -86,6 +87,7 @@ export const insertClubMatchSchema = createInsertSchema(clubMatches).omit({
 }).extend({
   status: z.enum(['pending', 'accepted', 'rejected', 'completed', 'cancelled']).default('pending'),
   matchType: z.enum(['friendly', 'tournament', 'league']).default('friendly'),
+  gameFormat: z.enum(['mens_singles', 'womens_singles', 'mens_doubles', 'womens_doubles', 'mixed_doubles']).default('mens_doubles'),
   result: z.enum(['requesting_won', 'receiving_won', 'draw']).optional()
 });
 
@@ -134,6 +136,7 @@ export interface Match {
   scheduledAt?: Date;
   location?: string;
   pointsCost: number;
+  gameFormat?: 'mens_singles' | 'womens_singles' | 'mens_doubles' | 'womens_doubles' | 'mixed_doubles'; // 경기 방식
   result?: 'requester_won' | 'target_won' | 'draw';
   isReviewed: boolean; // 전체 리뷰 완료 여부 (양쪽 다 완료)
   reviewedByRequester: boolean; // 요청자 리뷰 완료 여부
@@ -225,6 +228,7 @@ export interface InsertMatch {
   scheduledAt?: Date;
   location?: string;
   pointsCost: number;
+  gameFormat?: 'mens_singles' | 'womens_singles' | 'mens_doubles' | 'womens_doubles' | 'mixed_doubles'; // 경기 방식
   result?: 'requester_won' | 'target_won' | 'draw';
   isReviewed?: boolean; // 기본값 false (전체 리뷰 완료)
   reviewedByRequester?: boolean; // 기본값 false
