@@ -15,6 +15,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import LoadingSpinner from "./LoadingSpinner";
+import ClubManagementModal from "./ClubManagementModal";
+import BracketGeneratorModal from "./BracketGeneratorModal";
+import ClubAnalyticsModal from "./ClubAnalyticsModal";
 
 interface ClubMembership {
   membership: {
@@ -57,6 +60,9 @@ const ROLE_COLORS = {
 export default function ClubDashboard({ membership }: ClubDashboardProps) {
   const { toast } = useToast();
   const leaveClubMutation = useLeaveClub();
+  const [showManagementModal, setShowManagementModal] = useState(false);
+  const [showBracketModal, setShowBracketModal] = useState(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   
   const { data: members = [], isLoading: membersLoading } = useClubMembers(membership.club.id);
   
@@ -201,6 +207,7 @@ export default function ClubDashboard({ membership }: ClubDashboardProps) {
           <Button 
             variant="outline" 
             className="w-full"
+            onClick={() => setShowManagementModal(true)}
             data-testid="button-manage-club"
           >
             <i className="fas fa-cog mr-2" />
@@ -211,10 +218,21 @@ export default function ClubDashboard({ membership }: ClubDashboardProps) {
         <Button 
           variant="outline" 
           className="w-full"
+          onClick={() => setShowAnalyticsModal(true)}
           data-testid="button-club-matches"
         >
-          <i className="fas fa-trophy mr-2" />
-          교류전 내역
+          <i className="fas fa-chart-line mr-2" />
+          클럽 전적 분석
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={() => setShowBracketModal(true)}
+          data-testid="button-generate-bracket"
+        >
+          <i className="fas fa-sitemap mr-2" />
+          대진표 생성
         </Button>
         
         {canLeaveClub && (
@@ -259,6 +277,28 @@ export default function ClubDashboard({ membership }: ClubDashboardProps) {
           </AlertDialog>
         )}
       </div>
+
+      {/* 모달들 */}
+      <ClubManagementModal 
+        isOpen={showManagementModal}
+        onClose={() => setShowManagementModal(false)}
+        membership={membership}
+      />
+      
+      <BracketGeneratorModal 
+        isOpen={showBracketModal}
+        onClose={() => setShowBracketModal(false)}
+        clubId={membership.club.id}
+        members={members}
+      />
+      
+      <ClubAnalyticsModal 
+        isOpen={showAnalyticsModal}
+        onClose={() => setShowAnalyticsModal(false)}
+        clubId={membership.club.id}
+        clubName={membership.club.name}
+        members={members}
+      />
     </div>
   );
 }

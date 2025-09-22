@@ -326,6 +326,7 @@ export interface ClubMatchFirebase {
   matchDate?: Date | null;
   matchLocation?: string | null;
   matchType: 'friendly' | 'tournament' | 'league';
+  gameFormat?: 'mens_singles' | 'womens_singles' | 'mens_doubles' | 'womens_doubles' | 'mixed_doubles';
   result?: 'requesting_won' | 'receiving_won' | 'draw' | null;
   requestingScore: number;
   receivingScore: number;
@@ -343,6 +344,7 @@ export interface InsertClubMatchFirebase {
   matchDate?: Date | null;
   matchLocation?: string | null;
   matchType?: 'friendly' | 'tournament' | 'league';
+  gameFormat?: 'mens_singles' | 'womens_singles' | 'mens_doubles' | 'womens_doubles' | 'mixed_doubles';
   result?: 'requesting_won' | 'receiving_won' | 'draw' | null;
   requestingScore?: number;
   receivingScore?: number;
