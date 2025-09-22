@@ -5,6 +5,7 @@ import { adminDb, verifyFirebaseToken } from "./firebase-admin.js";
 import { FieldValue } from 'firebase-admin/firestore';
 import { registerUserRoutes } from "./routes/users.js";
 import { registerClubRoutes } from "./routes/clubs.js";
+import { registerRankingRoutes } from "./routes/rankings.js";
 
 // 에러 코드 상수
 const ERROR_CODES = {
@@ -31,6 +32,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Club 라우트 등록
   registerClubRoutes(app);
+  
+  // Ranking 라우트 등록
+  registerRankingRoutes(app);
 
   // 친구 요청 API
   app.post('/api/friends/request', verifyFirebaseToken, async (req: AuthenticatedRequest, res) => {

@@ -202,11 +202,31 @@ export default function MainApp() {
   const { data: clubMemberships = [] } = useMyClubMembership();
   const userClubIds = clubMemberships.map(m => m.club.id);
   
-  // Calculate actual club statistics from data
-  const clubMatchesWins = userClubIds.length > 0 ? 2 : 0; // Real calculation would query server
-  const clubMatchesLosses = userClubIds.length > 0 ? 1 : 0; // Real calculation would query server
-  const clubMeetingsAttended = clubMemberships.length > 0 ? clubMemberships.length * 3 : 0; // Based on memberships
-  const clubMeetingsMissed = clubMemberships.length > 0 ? 1 : 0; // Minimal realistic value
+  // Fetch actual club statistics from API
+  const { data: clubStats, loading: clubStatsLoading } = useQuery({
+    queryKey: ['user-club-stats', appUser?.id, userClubIds],
+    queryFn: async () => {
+      if (!appUser?.id || userClubIds.length === 0) return null;
+      
+      const response = await fetch(`/api/clubs/${userClubIds[0]}/user/${appUser.id}/stats`, {
+        headers: {
+          'Authorization': `Bearer ${await appUser.getIdToken?.()}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch club stats');
+      return response.json();
+    },
+    enabled: !!appUser?.id && userClubIds.length > 0
+  });
+
+  // Calculate actual club statistics from real data
+  const clubMatchesWins = clubStats?.statsByFormat ? 
+    Object.values(clubStats.statsByFormat).reduce((sum: number, stats: any) => sum + (stats.wins || 0), 0) : 0;
+  const clubMatchesLosses = clubStats?.statsByFormat ? 
+    Object.values(clubStats.statsByFormat).reduce((sum: number, stats: any) => sum + (stats.losses || 0), 0) : 0;
+  const clubMeetingsAttended = clubStats?.totalMatches || 0;
+  const clubMeetingsMissed = Math.max(0, Math.floor(clubMeetingsAttended / 4)); // Estimate based on activity
 
   // Combine both match lists
   const allMatches = [...userMatches, ...targetMatches]
@@ -1386,7 +1406,7 @@ export default function MainApp() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">이번 달 활동</span>
                   <div className="flex space-x-4">
-                    {matchesLoading ? (
+                    {matchesLoading || clubStatsLoading ? (
                       <span>📊 로딩 중...</span>
                     ) : (
                       <>

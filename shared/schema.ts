@@ -50,10 +50,42 @@ export const clubMatches = pgTable('club_matches', {
   requestingScore: integer('requesting_score').default(0), // 신청 클럽 점수
   receivingScore: integer('receiving_score').default(0), // 수신 클럽 점수
   eloChange: integer('elo_change').default(0), // ELO 변화량 (+/- for requesting club)
+  // Participant tracking for individual RP calculation
+  requestingTeamPlayer1: varchar('requesting_team_player1', { length: 255 }), // 신청팀 선수1 Firebase UID
+  requestingTeamPlayer2: varchar('requesting_team_player2', { length: 255 }), // 신청팀 선수2 Firebase UID (복식인 경우)
+  receivingTeamPlayer1: varchar('receiving_team_player1', { length: 255 }), // 수신팀 선수1 Firebase UID
+  receivingTeamPlayer2: varchar('receiving_team_player2', { length: 255 }), // 수신팀 선수2 Firebase UID (복식인 경우)
   notes: text('notes'), // 경기 관련 메모
   completedAt: timestamp('completed_at'), // 경기 완료 시간
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// User Ranking Points table - Individual ELO-based RP tracking per club
+export const userRankingPoints = pgTable('user_ranking_points', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 255 }).notNull(), // Firebase UID
+  clubId: integer('club_id').notNull(), // 클럽별로 RP 관리
+  gameFormat: varchar('game_format', { length: 30 }).notNull(), // 경기 방식별 RP
+  rankingPoints: integer('ranking_points').default(1200), // ELO 시작점수 (1200)
+  wins: integer('wins').default(0), // 승수
+  losses: integer('losses').default(0), // 패수
+  draws: integer('draws').default(0), // 무승부
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+// Match Participants table - Track individual player participation in club matches
+export const matchParticipants = pgTable('match_participants', {
+  id: serial('id').primaryKey(),
+  matchId: integer('match_id').notNull(), // clubMatches 테이블 참조
+  userId: varchar('user_id', { length: 255 }).notNull(), // Firebase UID
+  team: varchar('team', { length: 20 }).notNull(), // 'requesting' | 'receiving'
+  partnerId: varchar('partner_id', { length: 255 }), // 파트너 Firebase UID (복식인 경우)
+  rpBefore: integer('rp_before').notNull(), // 경기 전 RP
+  rpAfter: integer('rp_after').notNull(), // 경기 후 RP
+  rpChange: integer('rp_change').notNull(), // RP 변화량
+  createdAt: timestamp('created_at').defaultNow()
 });
 
 // =============================================================================
@@ -91,15 +123,32 @@ export const insertClubMatchSchema = createInsertSchema(clubMatches).omit({
   result: z.enum(['requesting_won', 'receiving_won', 'draw']).optional()
 });
 
+// Insert schema for user ranking points
+export const insertUserRankingPointsSchema = createInsertSchema(userRankingPoints).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+// Insert schema for match participants
+export const insertMatchParticipantsSchema = createInsertSchema(matchParticipants).omit({
+  id: true,
+  createdAt: true
+});
+
 // Insert types from schemas
 export type InsertClub = z.infer<typeof insertClubSchema>;
 export type InsertClubMember = z.infer<typeof insertClubMemberSchema>;
 export type InsertClubMatch = z.infer<typeof insertClubMatchSchema>;
+export type InsertUserRankingPoints = z.infer<typeof insertUserRankingPointsSchema>;
+export type InsertMatchParticipants = z.infer<typeof insertMatchParticipantsSchema>;
 
 // Select types from tables
 export type Club = typeof clubs.$inferSelect;
 export type ClubMember = typeof clubMembers.$inferSelect;
 export type ClubMatch = typeof clubMatches.$inferSelect;
+export type UserRankingPoints = typeof userRankingPoints.$inferSelect;
+export type MatchParticipants = typeof matchParticipants.$inferSelect;
 
 // =============================================================================
 // FIREBASE FIRESTORE INTERFACES (Legacy - transitioning to Drizzle)

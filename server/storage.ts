@@ -2,9 +2,13 @@ import {
   Club, 
   ClubMember, 
   ClubMatch,
+  UserRankingPoints,
+  MatchParticipants,
   InsertClub, 
   InsertClubMember, 
-  InsertClubMatch 
+  InsertClubMatch,
+  InsertUserRankingPoints,
+  InsertMatchParticipants
 } from '@shared/schema';
 
 // Storage interface for club management
@@ -28,6 +32,7 @@ export interface IStorage {
   // Club match operations
   createClubMatch(match: InsertClubMatch): Promise<ClubMatch>;
   getClubMatches(clubId: number): Promise<ClubMatch[]>;
+  getMatchById(matchId: number): Promise<ClubMatch | null>;
   updateMatchStatus(matchId: number, status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled'): Promise<ClubMatch>;
   updateMatchResult(matchId: number, result: {
     result: 'requesting_won' | 'receiving_won' | 'draw',
@@ -35,6 +40,25 @@ export interface IStorage {
     receivingScore: number,
     eloChange: number
   }): Promise<ClubMatch>;
+  
+  // User Ranking Points operations
+  getUserRankingPoints(userId: string, clubId: number): Promise<UserRankingPoints[]>;
+  getUserRankingPointsByFormat(userId: string, clubId: number, gameFormat: string): Promise<UserRankingPoints | null>;
+  createOrUpdateUserRankingPoints(data: InsertUserRankingPoints): Promise<UserRankingPoints>;
+  getClubRankingsByFormat(clubId: number, gameFormat: string): Promise<UserRankingPoints[]>;
+  
+  // Match Participants operations  
+  addMatchParticipants(participants: InsertMatchParticipants[]): Promise<MatchParticipants[]>;
+  getMatchParticipants(matchId: number): Promise<MatchParticipants[]>;
+  getUserMatchHistory(userId: string, clubId?: number): Promise<MatchParticipants[]>;
+  getPartnershipStats(userId: string, clubId: number): Promise<{
+    partnerId: string;
+    wins: number;
+    losses: number;
+    draws: number;
+    gamesPlayed: number;
+    winRate: number;
+  }[]>;
 }
 
 // In-memory storage implementation for development
@@ -42,9 +66,13 @@ export class MemStorage implements IStorage {
   private clubs: Map<number, Club> = new Map();
   private clubMembers: Map<number, ClubMember> = new Map();
   private clubMatches: Map<number, ClubMatch> = new Map();
+  private userRankingPoints: Map<number, UserRankingPoints> = new Map();
+  private matchParticipants: Map<number, MatchParticipants> = new Map();
   private nextClubId = 1;
   private nextMemberId = 1;
   private nextMatchId = 1;
+  private nextRankingId = 1;
+  private nextParticipantId = 1;
 
   // Club operations
   async createClub(club: InsertClub): Promise<Club> {
@@ -147,10 +175,15 @@ export class MemStorage implements IStorage {
       matchDate: match.matchDate || null,
       matchLocation: match.matchLocation || null,
       matchType: match.matchType || 'friendly',
+      gameFormat: match.gameFormat || 'mens_doubles',
       result: match.result || null,
       requestingScore: match.requestingScore || 0,
       receivingScore: match.receivingScore || 0,
       eloChange: match.eloChange || 0,
+      requestingTeamPlayer1: match.requestingTeamPlayer1 || null,
+      requestingTeamPlayer2: match.requestingTeamPlayer2 || null,
+      receivingTeamPlayer1: match.receivingTeamPlayer1 || null,
+      receivingTeamPlayer2: match.receivingTeamPlayer2 || null,
       notes: match.notes || null,
       completedAt: null,
       createdAt: new Date(),
@@ -163,6 +196,10 @@ export class MemStorage implements IStorage {
   async getClubMatches(clubId: number): Promise<ClubMatch[]> {
     return Array.from(this.clubMatches.values())
       .filter(match => match.requestingClubId === clubId || match.receivingClubId === clubId);
+  }
+
+  async getMatchById(matchId: number): Promise<ClubMatch | null> {
+    return this.clubMatches.get(matchId) || null;
   }
 
   async updateMatchStatus(matchId: number, status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'cancelled'): Promise<ClubMatch> {
@@ -197,6 +234,154 @@ export class MemStorage implements IStorage {
     };
     this.clubMatches.set(matchId, updatedMatch);
     return updatedMatch;
+  }
+
+  // User Ranking Points operations
+  async getUserRankingPoints(userId: string, clubId: number): Promise<UserRankingPoints[]> {
+    return Array.from(this.userRankingPoints.values())
+      .filter(urp => urp.userId === userId && urp.clubId === clubId);
+  }
+
+  async getUserRankingPointsByFormat(userId: string, clubId: number, gameFormat: string): Promise<UserRankingPoints | null> {
+    return Array.from(this.userRankingPoints.values())
+      .find(urp => urp.userId === userId && urp.clubId === clubId && urp.gameFormat === gameFormat) || null;
+  }
+
+  async createOrUpdateUserRankingPoints(data: InsertUserRankingPoints): Promise<UserRankingPoints> {
+    const existing = await this.getUserRankingPointsByFormat(data.userId, data.clubId, data.gameFormat);
+    
+    if (existing) {
+      const updated = {
+        ...existing,
+        rankingPoints: data.rankingPoints ?? existing.rankingPoints,
+        wins: data.wins ?? existing.wins,
+        losses: data.losses ?? existing.losses,
+        draws: data.draws ?? existing.draws,
+        updatedAt: new Date()
+      };
+      this.userRankingPoints.set(existing.id, updated);
+      return updated;
+    } else {
+      const newRankingPoints: UserRankingPoints = {
+        id: this.nextRankingId++,
+        userId: data.userId,
+        clubId: data.clubId,
+        gameFormat: data.gameFormat,
+        rankingPoints: data.rankingPoints ?? 1200,
+        wins: data.wins ?? 0,
+        losses: data.losses ?? 0,
+        draws: data.draws ?? 0,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.userRankingPoints.set(newRankingPoints.id, newRankingPoints);
+      return newRankingPoints;
+    }
+  }
+
+  async getClubRankingsByFormat(clubId: number, gameFormat: string): Promise<UserRankingPoints[]> {
+    return Array.from(this.userRankingPoints.values())
+      .filter(urp => urp.clubId === clubId && urp.gameFormat === gameFormat)
+      .sort((a, b) => (b.rankingPoints || 1200) - (a.rankingPoints || 1200));
+  }
+
+  // Match Participants operations
+  async addMatchParticipants(participants: InsertMatchParticipants[]): Promise<MatchParticipants[]> {
+    const result: MatchParticipants[] = [];
+    
+    for (const participant of participants) {
+      const newParticipant: MatchParticipants = {
+        id: this.nextParticipantId++,
+        matchId: participant.matchId,
+        userId: participant.userId,
+        team: participant.team,
+        partnerId: participant.partnerId || null,
+        rpBefore: participant.rpBefore,
+        rpAfter: participant.rpAfter,
+        rpChange: participant.rpChange,
+        createdAt: new Date()
+      };
+      this.matchParticipants.set(newParticipant.id, newParticipant);
+      result.push(newParticipant);
+    }
+    
+    return result;
+  }
+
+  async getMatchParticipants(matchId: number): Promise<MatchParticipants[]> {
+    return Array.from(this.matchParticipants.values())
+      .filter(mp => mp.matchId === matchId);
+  }
+
+  async getUserMatchHistory(userId: string, clubId?: number): Promise<MatchParticipants[]> {
+    const userParticipants = Array.from(this.matchParticipants.values())
+      .filter(mp => mp.userId === userId);
+    
+    if (!clubId) return userParticipants;
+    
+    // 클럽 ID로 필터링하려면 매치 정보를 확인해야 함
+    const filteredParticipants: MatchParticipants[] = [];
+    for (const participant of userParticipants) {
+      const match = this.clubMatches.get(participant.matchId);
+      if (match && (match.requestingClubId === clubId || match.receivingClubId === clubId)) {
+        filteredParticipants.push(participant);
+      }
+    }
+    
+    return filteredParticipants.sort((a, b) => 
+      new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime()
+    );
+  }
+
+  async getPartnershipStats(userId: string, clubId: number): Promise<{
+    partnerId: string;
+    wins: number;
+    losses: number;  
+    draws: number;
+    gamesPlayed: number;
+    winRate: number;
+  }[]> {
+    const userHistory = await this.getUserMatchHistory(userId, clubId);
+    const partnerStats = new Map<string, { wins: number; losses: number; draws: number; }>();
+    
+    for (const participation of userHistory) {
+      if (!participation.partnerId) continue; // 단식은 제외
+      
+      const partnerId = participation.partnerId;
+      if (!partnerStats.has(partnerId)) {
+        partnerStats.set(partnerId, { wins: 0, losses: 0, draws: 0 });
+      }
+      
+      const stats = partnerStats.get(partnerId)!;
+      const match = this.clubMatches.get(participation.matchId);
+      
+      if (match && match.result) {
+        const isUserWin = (
+          (participation.team === 'requesting' && match.result === 'requesting_won') ||
+          (participation.team === 'receiving' && match.result === 'receiving_won')
+        );
+        
+        if (match.result === 'draw') {
+          stats.draws++;
+        } else if (isUserWin) {
+          stats.wins++;
+        } else {
+          stats.losses++;
+        }
+      }
+    }
+    
+    return Array.from(partnerStats.entries()).map(([partnerId, stats]) => {
+      const gamesPlayed = stats.wins + stats.losses + stats.draws;
+      return {
+        partnerId,
+        wins: stats.wins,
+        losses: stats.losses,
+        draws: stats.draws,
+        gamesPlayed,
+        winRate: gamesPlayed > 0 ? (stats.wins / gamesPlayed) * 100 : 0
+      };
+    }).sort((a, b) => b.winRate - a.winRate);
   }
 }
 
