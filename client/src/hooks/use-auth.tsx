@@ -23,13 +23,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      console.log("🚀 Starting Google sign-in...");
+      console.log("🌐 Current domain:", window.location.origin);
+      
       // Try popup first (works better in published environments)
       try {
+        console.log("🔥 Attempting popup sign-in...");
         const result = await signInWithPopup(auth, googleProvider);
-        console.log("Google popup sign-in successful:", result.user);
+        console.log("✅ Google popup sign-in successful:", result.user);
         return;
       } catch (popupError: any) {
-        console.warn("Popup sign-in failed, trying redirect:", popupError);
+        console.warn("⚠️ Popup sign-in failed, trying redirect:", popupError);
+        console.warn("❌ Popup error details:", {
+          code: popupError.code,
+          message: popupError.message,
+          domain: window.location.origin
+        });
         
         // If popup fails (e.g., popup blocked, unsupported environment), fall back to redirect
         if (popupError.code === 'auth/popup-blocked' || 
@@ -45,9 +54,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Add more specific error handling
       if (error.code === 'auth/unauthorized-domain') {
-        console.error("Domain not authorized. Please add the domain to Firebase Console.");
-        console.error("Current domain:", window.location.origin);
+        console.error("🚫 FIREBASE ERROR: Domain not authorized!");
+        console.error("📍 Current domain:", window.location.origin);
+        console.error("🔧 Solution: Add this domain to Firebase Console > Authentication > Settings > Authorized domains");
+        alert(`Firebase Error: Domain '${window.location.origin}' is not authorized.\n\nPlease add this domain to Firebase Console:\n1. Go to Firebase Console\n2. Authentication > Settings\n3. Add domain to Authorized domains`);
       }
+      
+      console.error("💥 Full sign-in error:", {
+        code: error.code,
+        message: error.message,
+        domain: window.location.origin,
+        timestamp: new Date().toISOString()
+      });
       
       // Re-throw error so UI can handle it
       throw error;
