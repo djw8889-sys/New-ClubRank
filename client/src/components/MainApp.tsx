@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useClubs } from "@/hooks/use-clubs";
-import { User, Club, clubMembers } from "@shared/schema"; // ClubMembership -> clubMembers로 변경 (실제 스키마 확인 필요)
+import { User, Club, clubMembers } from "@shared/schema";
 import { Toaster } from "@/components/ui/toaster";
 import BottomNavigation from "./BottomNavigation";
 import MyClubTabContent from "./MyClubTabContent";
@@ -22,8 +22,7 @@ import PointChargeModal from "./PointChargeModal";
 import ShopModal from "./ShopModal";
 import FeedbackModal from "./FeedbackModal";
 
-// `useClubs`가 반환하는 데이터 타입에 맞게 ClubMembership 정의
-type ClubMembership = typeof clubMembers.$inferSelect;
+type ClubMembership = NonNullable<ReturnType<typeof useClubs>['data']>[0];
 
 export default function MainApp() {
   const { user, profile, isProfileNew, loading } = useAuth();
@@ -67,16 +66,12 @@ export default function MainApp() {
             <MyClubTabContent
                 myClubMemberships={myClubMemberships}
                 isLoading={clubsLoading}
-                onManageClub={(membership) => setSelectedClubForManagement(membership)}
+                onManageClub={setSelectedClubForManagement}
             />
         )}
       </main>
       
-      <PostCreateModal
-        isOpen={isPostModalOpen}
-        onClose={() => setPostModalOpen(false)}
-        onPostCreated={() => {}}
-      />
+      <PostCreateModal isOpen={isPostModalOpen} onClose={() => setPostModalOpen(false)} onPostCreated={() => {}} />
       {selectedUser && (
         <UserProfileModal
           userId={selectedUser.id}
@@ -95,11 +90,11 @@ export default function MainApp() {
           isLoading={false}
         />
       )}
-      {matchResultId && user && profile && (
+      {matchResultId && profile && (
         <MatchResultModal
           isOpen={!!matchResultId}
           onClose={() => setMatchResultId(null)}
-          matchId={matchResultId} // match -> matchId로 변경
+          matchId={matchResultId}
           currentUser={profile}
           opponent={null}
         />
@@ -108,17 +103,11 @@ export default function MainApp() {
         <MatchHistoryModal
           isOpen={!!matchHistoryUserId}
           onClose={() => setMatchHistoryUserId(null)}
-          userId={matchHistoryUserId} // 누락되었던 userId prop 추가
+          userId={matchHistoryUserId}
         />
       )}
-      <ClubCreationModal
-        isOpen={isClubCreationModalOpen}
-        onClose={() => setClubCreationModalOpen(false)}
-      />
-      <ClubSearchModal
-        isOpen={isClubSearchModalOpen}
-        onClose={() => setClubSearchModalOpen(false)}
-      />
+      <ClubCreationModal isOpen={isClubCreationModalOpen} onClose={() => setClubCreationModalOpen(false)} />
+      <ClubSearchModal isOpen={isClubSearchModalOpen} onClose={() => setClubSearchModalOpen(false)} />
       {selectedClubForManagement && (
         <ClubManagementModal
           isOpen={!!selectedClubForManagement}
@@ -143,15 +132,9 @@ export default function MainApp() {
           onClose={() => setSelectedClubForBracket(null)}
         />
       )}
-       <PointChargeModal
-        isOpen={isPointChargeModalOpen}
-        onClose={() => setPointChargeModalOpen(false)}
-      />
+       <PointChargeModal isOpen={isPointChargeModalOpen} onClose={() => setPointChargeModalOpen(false)} />
       <ShopModal isOpen={isShopModalOpen} onClose={() => setShopModalOpen(false)} />
-      <FeedbackModal
-        isOpen={isFeedbackModalOpen}
-        onClose={() => setFeedbackModalOpen(false)}
-      />
+      <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setFeedbackModalOpen(false)} />
 
       <footer className="fixed bottom-0 left-0 right-0">
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />

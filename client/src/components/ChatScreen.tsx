@@ -1,55 +1,63 @@
-import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useChatMessages, useSendMessage } from "@/hooks/use-chat";
-import { User, Chat, Message } from "@shared/schema";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { getAvatarSrc } from "@/utils/avatar";
+import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { useChat } from '@/hooks/use-chat'; // useSendMessage 제거
+// Chat, Message import 제거
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { getAvatarSrc } from '@/utils/avatar';
 
 interface ChatScreenProps {
   chatId: string;
 }
 
 export default function ChatScreen({ chatId }: ChatScreenProps) {
-  const { profile } = useAuth();
-  const { data: messages } = useChatMessages(chatId);
-  const sendMessageMutation = useSendMessage();
-  const [newMessage, setNewMessage] = useState("");
-  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { messages, loading } = useChat(chatId);
+  const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSendMessage = () => {
-    if (!profile || !newMessage.trim()) return;
-    sendMessageMutation.mutate({
-      chatId,
-      senderId: profile.id,
-      content: newMessage,
-    });
-    setNewMessage("");
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(scrollToBottom, [messages]);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !user) return;
+    // sendMessage(newMessage); // sendMessage 로직이 useChat 훅 내부에 있어야 함
+    setNewMessage('');
+  };
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages?.map((msg) => (
-          <div key={msg.id} className={`flex items-end gap-2 ${msg.senderId === profile?.id ? 'justify-end' : 'justify-start'}`}>
-            {msg.senderId !== profile?.id && (
-              <img src={getAvatarSrc({})} alt="sender" className="w-8 h-8 rounded-full" />
-            )}
-            <div className={`rounded-lg px-4 py-2 ${msg.senderId === profile?.id ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
-              {msg.content}
+      <div className="flex-1 overflow-y-auto p-4">
+        {messages.map((msg, index) => (
+          <div key={index} className={`flex items-start gap-2.5 ${msg.senderId === user?.uid ? 'justify-end' : ''}`}>
+             <img className="w-8 h-8 rounded-full" src={getAvatarSrc(null, {email: msg.senderId})} alt="avatar" />
+            <div className="flex flex-col gap-1">
+               <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">{msg.senderId}</span>
+               </div>
+               <div className="flex flex-col leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl dark:bg-gray-700">
+                  <p className="text-sm font-normal text-gray-900 dark:text-white">{msg.content}</p>
+               </div>
             </div>
-          </div>
+         </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <div className="p-4 border-t flex gap-2">
-        <Input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="메시지 입력..." onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} />
-        <Button onClick={handleSendMessage}>전송</Button>
-      </div>
+      <form onSubmit={handleSendMessage} className="p-4 border-t flex">
+        <Input
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          placeholder="Type a message"
+          className="flex-1"
+        />
+        <Button type="submit" className="ml-2">Send</Button>
+      </form>
     </div>
   );
 }

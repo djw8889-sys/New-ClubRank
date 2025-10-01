@@ -1,16 +1,12 @@
-import type { Request, Response, NextFunction } from 'express';
-import { User } from '../shared/schema'; // 경로 수정
-import { registerClubRoutes } from './routes/clubs.js';
-import registerRankingRoutes from './routes/rankings.js';
-import { registerUserRoutes } from './routes/users.js';
+import { Router, Request, Response, NextFunction } from 'express';
+import { User } from '../shared/schema';
 
-// AuthenticatedRequest 타입을 명확히 정의하고 export 합니다.
-// 로그인 확인 미들웨어를 통과한 요청은 user가 항상 존재한다고 가정합니다.
+// AuthenticatedRequest 타입을 명확히 정의
 export interface AuthenticatedRequest extends Request {
   user: User;
 }
 
-// ensureAuthenticated 미들웨어를 export 합니다.
+// ensureAuthenticated 미들웨어
 export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
   if (req.isAuthenticated()) {
     return next();
@@ -18,14 +14,29 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
   res.status(401).json({ message: 'Unauthorized' });
 }
 
-export function registerRoutes(app: any) {
-  // 각 라우터 모듈을 해당 경로에 등록합니다.
-  app.use('/api/clubs', registerClubRoutes);
-  app.use('/api/rankings', registerRankingRoutes);
-  app.use('/api/users', registerUserRoutes);
+const router = Router();
 
-  // 나머지 라우트들...
-  // 예시: app.get('/api/some-other-route', (req, res) => { ... });
-  
-  return app; 
-}
+// 예시 라우트 (오류가 발생한 구조를 기반으로 수정)
+router.post('/some-route', ensureAuthenticated, async (req: Request, res: Response) => {
+  const authenticatedReq = req as AuthenticatedRequest;
+  const userId = authenticatedReq.user.id;
+  const { someData } = req.body; 
+
+  // 여기에 비즈니스 로직을 추가합니다.
+  console.log(userId, someData);
+
+  res.json({ message: 'Success' });
+});
+
+router.put('/another-route', ensureAuthenticated, async (req: Request, res: Response) => {
+    const authenticatedReq = req as AuthenticatedRequest;
+    const userId = authenticatedReq.user.id;
+    const { otherData } = req.body;
+
+    // 여기에 비즈니스 로직을 추가합니다.
+    console.log(userId, otherData);
+    
+    res.json({ message: 'Updated' });
+});
+
+export default router;
