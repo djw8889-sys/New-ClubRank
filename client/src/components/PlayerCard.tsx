@@ -15,7 +15,7 @@ export default function PlayerCard({ user, onMatchRequest }: PlayerCardProps) {
     <div className="bg-background rounded-xl border border-border p-4 flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <img
-          src={getAvatarSrc(user.avatarUrl, user)}
+          src={getAvatarSrc(user.avatarUrl, { id: user.id, username: user.username, email: user.email })}
           alt={user.username || 'User avatar'}
           className="w-14 h-14 rounded-full"
         />

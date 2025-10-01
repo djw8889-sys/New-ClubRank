@@ -67,7 +67,7 @@ export default function MatchRequestModal({
             {/* Target User */}
             <div className="flex flex-col items-center space-y-2">
               <img
-                src={getAvatarSrc(targetUser.avatarUrl, targetUser)}
+                src={getAvatarSrc(targetUser.avatarUrl, { id: targetUser.id, username: targetUser.username, email: targetUser.email })}
                 alt={targetUser.username || "Opponent's Avatar"}
                 className="w-20 h-20 rounded-full"
               />

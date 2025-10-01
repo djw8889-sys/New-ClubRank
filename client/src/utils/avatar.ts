@@ -8,7 +8,7 @@
  * @param size - Avatar size in pixels (default: 120)
  * @returns Boring avatars URL
  */
-export function getAvatarUrl(user: { id?: string; username?: string; email?: string } | null | undefined, size: number = 120): string {
+export function getAvatarUrl(user: { id?: string; username?: string | null; email?: string | null } | null | undefined, size: number = 120): string {
   if (!user) {
     return `https://source.boringavatars.com/beam/${size}/anonymous`;
   }
@@ -26,6 +26,6 @@ export function getAvatarUrl(user: { id?: string; username?: string; email?: str
  * @param size - Avatar size in pixels (default: 120)
  * @returns Final avatar URL
  */
-export function getAvatarSrc(avatarUrl: string | null | undefined, user: { id?: string; username?: string; email?: string } | null | undefined, size: number = 120): string {
+export function getAvatarSrc(avatarUrl: string | null | undefined, user: { id?: string; username?: string | null; email?: string | null } | null | undefined, size: number = 120): string {
   return avatarUrl || getAvatarUrl(user, size);
 }

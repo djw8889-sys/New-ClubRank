@@ -110,7 +110,10 @@ export default function MainApp() {
       {selectedClubForManagement && (
         <ClubManagementModal
           isOpen={!!selectedClubForManagement}
-          membership={selectedClubForManagement}
+          membership={{
+            ...selectedClubForManagement,
+            role: selectedClubForManagement.role as 'owner' | 'admin' | 'member'
+          }}
           onClose={() => setSelectedClubForManagement(null)}
         />
       )}
