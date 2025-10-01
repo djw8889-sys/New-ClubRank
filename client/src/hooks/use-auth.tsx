@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       await setDoc(userDocRef, { ...newProfileData, updatedAt: serverTimestamp() }, { merge: true });
-      setProfile((prev: User | null) => (prev ? { ...prev, ...newProfileData } : null));
+      setProfile((prev) => (prev ? { ...prev, ...newProfileData } : null));
       if(isProfileNew) setIsProfileNew(false);
     }
   };
@@ -78,10 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
+

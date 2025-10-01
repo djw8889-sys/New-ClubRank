@@ -5,7 +5,7 @@ import { useClubs } from "@/hooks/use-clubs";
 import { useOnlineUsers } from "@/hooks/use-online-users";
 // import { useGeolocation } from "@/hooks/use-geolocation";
 
-import { User, Club, Match, ClubMember, Post, Comment } from "@shared/schema";
+import { User, Club, Match, clubMembers as ClubMember, posts as Post, comments as Comment } from "@shared/schema";
 import {
   getTierInfo,
   // getTierProgress,
@@ -31,26 +31,26 @@ import {
   Star,
 } from "lucide-react";
 
-import SplashScreen, { SplashScreenProps } from "./SplashScreen";
-import ProfileSetupScreen, { ProfileSetupScreenProps } from "./ProfileSetupScreen";
+import SplashScreen from "./SplashScreen";
+import ProfileSetupScreen from "./ProfileSetupScreen";
 import LoginScreen from "./LoginScreen";
-import BottomNavigation, { BottomNavigationProps } from "./BottomNavigation";
+import BottomNavigation from "./BottomNavigation";
 import MyClubTabContent from "./MyClubTabContent";
-import ClubDashboard, { ClubDashboardProps } from "./ClubDashboard";
-import UserProfileModal, { UserProfileModalProps } from "./UserProfileModal";
-import MatchRequestModal, { MatchRequestModalProps } from "./MatchRequestModal";
-import MatchResultModal, { MatchResultModalProps } from "./MatchResultModal";
-import MatchHistoryModal, { MatchHistoryModalProps } from "./MatchHistoryModal";
-import PostCreateModal, { PostCreateModalProps } from "./PostCreateModal";
-import ClubCreationModal, { ClubCreationModalProps } from "./ClubCreationModal";
-import ClubSearchModal, { ClubSearchModalProps } from "./ClubSearchModal";
-import ClubManagementModal, { ClubManagementModalProps } from "./ClubManagementModal";
-import ClubAnalyticsModal, { ClubAnalyticsModalProps } from "./ClubAnalyticsModal";
-import BracketGeneratorModal, { BracketGeneratorModalProps } from "./BracketGeneratorModal";
+import ClubDashboard from "./ClubDashboard";
+import UserProfileModal from "./UserProfileModal";
+import MatchRequestModal from "./MatchRequestModal";
+import MatchResultModal from "./MatchResultModal";
+import MatchHistoryModal from "./MatchHistoryModal";
+import PostCreateModal from "./PostCreateModal";
+import ClubCreationModal from "./ClubCreationModal";
+import ClubSearchModal from "./ClubSearchModal";
+import ClubManagementModal from "./ClubManagementModal";
+import ClubAnalyticsModal from "./ClubAnalyticsModal";
+import BracketGeneratorModal from "./BracketGeneratorModal";
 import AdminPanel from "./AdminPanel";
-import PointChargeModal, { PointChargeModalProps } from "./PointChargeModal";
-import ShopModal, { ShopModalProps } from "./ShopModal";
-import FeedbackModal, { FeedbackModalProps } from "./FeedbackModal";
+import PointChargeModal from "./PointChargeModal";
+import ShopModal from "./ShopModal";
+import FeedbackModal from "./FeedbackModal";
 
 export default function MainApp() {
   const { user, profile, updateProfile, isProfileNew } = useAuth();
@@ -102,7 +102,7 @@ export default function MainApp() {
         <MyClubTabContent 
             myClubMemberships={myClubMemberships}
             isLoading={clubsLoading}
-            onManageClub={(club) => setSelectedClubForManagement(club as Club)}
+            onManageClub={(club: any) => setSelectedClubForManagement(club)}
         />
       </main>
 

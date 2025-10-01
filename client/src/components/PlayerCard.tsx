@@ -36,8 +36,8 @@ export default function PlayerCard({
     >
       <CardContent className="p-4 flex items-center space-x-4">
         <img
-          src={getAvatarSrc(player.avatarUrl)}
-          alt={player.username}
+          src={getAvatarSrc(player.avatarUrl || '')}
+          alt={player.username || 'player'}
           className="w-16 h-16 rounded-full"
         />
         <div className="flex-1">
@@ -62,3 +62,4 @@ export default function PlayerCard({
     </Card>
   );
 }
+
