@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useMatchById } from "@/hooks/use-matches.tsx"; // 경로 수정
+import { useMatchById } from "@/hooks/use-matches";
 import { getAvatarSrc } from "@/utils/avatar";
 
 export interface MatchResultModalProps {
@@ -15,6 +15,7 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
   if (error) return <div>Error: {error.message}</div>;
   if (!matchData) return null;
 
+  // FIX: Destructure the returned data correctly
   const { match, player1, player2 } = matchData;
 
   return (
@@ -43,4 +44,3 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
     </Dialog>
   );
 }
-

@@ -33,7 +33,7 @@ export const clubs = pgTable("clubs", {
   logoUrl: varchar("logo_url"),
   bannerUrl: varchar("banner_url"),
   ownerId: varchar("owner_id").references(() => users.id).notNull(),
-  region: varchar("region"), // FIX: .notNull()을 제거하여 string | null 타입을 허용
+  region: varchar("region"),
   primaryColor: varchar("primary_color"),
   rankingPoints: integer("ranking_points").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -63,10 +63,32 @@ export const matches = pgTable("matches", {
   location: varchar("location"),
 });
 
+// Posts Table (NEW)
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  clubId: integer("club_id").references(() => clubs.id),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Comments Table (NEW)
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => posts.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
 
 // TypeScript types
 export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 export type Club = typeof clubs.$inferSelect;
+export type NewClub = typeof clubs.$inferInsert;
 export type ClubMember = typeof clubMembers.$inferSelect;
 export type Match = typeof matches.$inferSelect;
-
+export type Post = typeof posts.$inferSelect;
+export type NewPost = typeof posts.$inferInsert;
+export type Comment = typeof comments.$inferSelect;
+export type NewComment = typeof comments.$inferInsert;
