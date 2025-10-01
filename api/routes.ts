@@ -1,86 +1,31 @@
-import { Request, Response, NextFunction, Router } from "express";
-import { User, insertUserSchema, users } from "../shared/schema.js";
-import { db } from "./storage.js";
-import { eq } from "drizzle-orm";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import session from "express-session";
-import MemoryStore from "memorystore";
+import type { Request, Response, NextFunction } from 'express';
+import { User } from '../shared/schema'; // 경로 수정
+import { registerClubRoutes } from './routes/clubs.js';
+import registerRankingRoutes from './routes/rankings.js';
+import { registerUserRoutes } from './routes/users.js';
 
+// AuthenticatedRequest 타입을 명확히 정의하고 export 합니다.
+// 로그인 확인 미들웨어를 통과한 요청은 user가 항상 존재한다고 가정합니다.
 export interface AuthenticatedRequest extends Request {
-  user?: User;
+  user: User;
 }
 
-export function ensureAuthenticated(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-    if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
-        return next();
-    }
-    if (req.user) {
-        return next();
-    }
-    res.status(401).json({ message: "Unauthorized" });
+// ensureAuthenticated 미들웨어를 export 합니다.
+export function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: 'Unauthorized' });
 }
 
-export function registerRoutes(app: Router) {
-  const server = app;
+export function registerRoutes(app: any) {
+  // 각 라우터 모듈을 해당 경로에 등록합니다.
+  app.use('/api/clubs', registerClubRoutes);
+  app.use('/api/rankings', registerRankingRoutes);
+  app.use('/api/users', registerUserRoutes);
 
-  const sessionMiddleware = session({
-    store: new (MemoryStore(session))({ checkPeriod: 86400000 }),
-    secret: process.env.SESSION_SECRET || "fallback-secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: server.get("env") === "production" },
-  });
-
-  server.use(sessionMiddleware);
-  server.use(passport.initialize());
-  server.use(passport.session());
-
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const usersResult = await db.select().from(users).where(eq(users.username, username));
-        const user = usersResult[0];
-        if (!user) {
-          return done(null, false, { message: "Incorrect username." });
-        }
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: string, done) => {
-    try {
-      const usersResult = await db.select().from(users).where(eq(users.id, id));
-      const user = usersResult[0];
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
-
-  server.post("/api/login", passport.authenticate("local"), (req, res) => {
-    res.json({ message: "Logged in successfully", user: req.user });
-  });
-
-  server.post("/api/register", async (req: AuthenticatedRequest, res) => {
-    const validation = insertUserSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ message: "Invalid user data", errors: validation.error.issues });
-    }
-    try {
-        await db.insert(users).values(validation.data);
-        res.status(201).json({ message: "User registered successfully" });
-    } catch (error) {
-        res.status(500).json({ message: "Registration failed", error });
-    }
-  });
-
-  return server;
+  // 나머지 라우트들...
+  // 예시: app.get('/api/some-other-route', (req, res) => { ... });
+  
+  return app; 
 }
