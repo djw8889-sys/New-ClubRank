@@ -4,6 +4,6 @@ import registerRoutes from './routes.js'; // 중괄호 {} 제거
 const app = express();
 
 // registerRoutes 함수를 호출하여 라우트를 등록합니다.
-const configuredApp = registerRoutes(app);
+registerRoutes(app);
 
-export default configuredApp;
+export default app;
