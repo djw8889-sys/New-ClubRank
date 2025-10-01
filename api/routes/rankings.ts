@@ -1,6 +1,6 @@
 import { type Response } from "express";
 import { db } from "../storage.js";
-import { rankings, users } from "../../shared/schema.js";
+import { rankings, users, matches } from "../../shared/schema.js"; // 경로 수정
 import { eq, desc, and, sql } from "drizzle-orm";
 import {
   type AuthenticatedRequest,
@@ -44,16 +44,16 @@ export function registerRankingRoutes(app: any) {
     async (req: AuthenticatedRequest, res: Response) => {
       try {
         const { clubId } = req.params;
-        const matches = await db.query.matches.findMany({
-          where: (matches, { eq }) => eq(matches.clubId, clubId),
-          orderBy: (matches, { desc }) => [desc(matches.createdAt)],
+        const matchHistory = await db.query.matches.findMany({
+          where: eq(matches.clubId, clubId),
+          orderBy: desc(matches.createdAt),
           limit: 20,
           with: {
             player1: { columns: { username: true, avatarUrl: true } },
             player2: { columns: { username: true, avatarUrl: true } },
           },
         });
-        res.json(matches);
+        res.json(matchHistory);
       } catch (error) {
         console.error("Error fetching match history:", error);
         res.status(500).json({ message: "Failed to fetch match history" });
@@ -75,12 +75,10 @@ export function registerRankingRoutes(app: any) {
 
         const [ranking1, ranking2] = await Promise.all([
           db.query.rankings.findFirst({
-            where: (rankings, { and, eq }) =>
-              and(eq(rankings.userId, player1Id), eq(rankings.clubId, clubId)),
+            where: (and(eq(rankings.userId, player1Id), eq(rankings.clubId, clubId))),
           }),
           db.query.rankings.findFirst({
-            where: (rankings, { and, eq }) =>
-              and(eq(rankings.userId, player2Id), eq(rankings.clubId, clubId)),
+            where: (and(eq(rankings.userId, player2Id), eq(rankings.clubId, clubId))),
           }),
         ]);
 
@@ -89,8 +87,8 @@ export function registerRankingRoutes(app: any) {
         }
 
         const { player1Elo, player2Elo } = calculateElo(
-          ranking1.rating ?? 1200, // null일 경우 기본값 사용
-          ranking2.rating ?? 1200, // null일 경우 기본값 사용
+          ranking1.rating ?? 1200,
+          ranking2.rating ?? 1200,
           result
         );
 
@@ -115,7 +113,7 @@ export function registerRankingRoutes(app: any) {
             })
             .where(and(eq(rankings.userId, player2Id), eq(rankings.clubId, clubId)));
 
-          await tx.insert(db.query.matches.fullSchema).values({
+          await tx.insert(matches).values({
             clubId,
             player1Id,
             player2Id,
@@ -133,3 +131,4 @@ export function registerRankingRoutes(app: any) {
     }
   );
 }
+
