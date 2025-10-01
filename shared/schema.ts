@@ -7,7 +7,9 @@ import {
   text,
   boolean,
   date,
+  primaryKey,
 } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 // Users Table
 export const users = pgTable("users", {
@@ -80,6 +82,10 @@ export const comments = pgTable("comments", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+
+// Zod schemas for validation
+export const insertUserSchema = createInsertSchema(users);
 
 // TypeScript types
 export type User = typeof users.$inferSelect;

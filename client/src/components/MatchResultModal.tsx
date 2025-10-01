@@ -1,6 +1,14 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useMatchById } from "@/hooks/use-matches";
 import { getAvatarSrc } from "@/utils/avatar";
+import { Match, User } from "@shared/schema";
+
+// Define the type for the data returned by the hook
+interface MatchWithPlayers {
+    match: Match;
+    player1: User;
+    player2: User;
+}
 
 export interface MatchResultModalProps {
   matchId: number;
@@ -15,8 +23,7 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
   if (error) return <div>Error: {error.message}</div>;
   if (!matchData) return null;
 
-  // FIX: Destructure the returned data correctly
-  const { match, player1, player2 } = matchData;
+  const { match, player1, player2 }: MatchWithPlayers = matchData;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
