@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useMatchHistory } from "@/hooks/use-matches";
+import { useMatchHistory } from "@/hooks/use-matches.tsx"; // 경로 수정
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { User } from "@shared/schema";
@@ -14,6 +14,7 @@ export default function MatchHistoryModal({ userId, isOpen, onClose }: MatchHist
     const { data: matches, isLoading, error } = useMatchHistory(userId);
     const { profile } = useAuth();
 
+    // Match 타입에 player1, player2가 포함되어 있다고 가정합니다.
     const getOpponent = (match: { player1: User; player2: User }) => {
         return match.player1.id === profile?.id ? match.player2 : match.player1;
     };
@@ -39,7 +40,6 @@ export default function MatchHistoryModal({ userId, isOpen, onClose }: MatchHist
                         const opponent = getOpponent(match);
                         const result = getMatchResult(match);
                         
-                        // FIX: 객체(`{}`)를 직접 렌더링하던 오류 수정
                         return (
                             <div key={match.id} className="flex items-center justify-between p-2 border rounded">
                                 <div>

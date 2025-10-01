@@ -1,8 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useMatchById } from "@/hooks/use-matches";
+import { useMatchById } from "@/hooks/use-matches.tsx"; // 경로 수정
 import { getAvatarSrc } from "@/utils/avatar";
 
-// FIX: 누락된 Props 타입 정의 추가
 export interface MatchResultModalProps {
   matchId: number;
   isOpen: boolean;
