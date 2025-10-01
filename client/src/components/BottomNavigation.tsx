@@ -1,6 +1,6 @@
 interface BottomNavigationProps {
   activeTab: string;
-  onTabChange: (tab: string, header: string) => void;
+  onTabChange: (tab: string) => void;
 }
 
 export default function BottomNavigation({ activeTab, onTabChange }: BottomNavigationProps) {
@@ -17,7 +17,7 @@ export default function BottomNavigation({ activeTab, onTabChange }: BottomNavig
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          onClick={() => onTabChange(tab.id, tab.header)}
+          onClick={() => onTabChange(tab.id)}
           className={`nav-btn p-3 ${
             activeTab === tab.id ? 'text-primary' : 'text-muted-foreground'
           }`}

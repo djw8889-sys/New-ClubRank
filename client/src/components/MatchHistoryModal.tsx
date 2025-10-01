@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/use-auth';
 import { useFirestoreCollection } from '@/hooks/use-firebase';
@@ -98,8 +97,8 @@ export default function MatchHistoryModal({ isOpen, onClose }: MatchHistoryModal
             <div className="space-y-3" data-testid="match-history-list">
               {allMatches.map((match) => {
                 const status = getMatchStatus(match);
-                const isRequester = match.requesterId === user?.uid;
-                const opponentId = isRequester ? match.targetId : match.requesterId;
+                const isRequester = 'requesterId' in match && match.requesterId === user?.uid;
+                const opponentId = isRequester ? ('targetId' in match && match.targetId) : ('requesterId' in match && match.requesterId);
                 const role = isRequester ? '신청함' : '신청받음';
                 
                 return (

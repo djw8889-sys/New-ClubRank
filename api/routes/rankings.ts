@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request } from "express";
 import { db } from "../storage.js";
 import { users } from "../../shared/schema.js";
 import { desc } from "drizzle-orm";
@@ -11,7 +11,7 @@ const router = Router();
 router.get(
   "/club/:clubId",
   ensureAuthenticated,
-  async (req: AuthenticatedRequest, res) => {
+  async (req: Request, res) => {
     const clubId = parseInt(req.params.clubId, 10);
     if (isNaN(clubId)) {
       return res.status(400).json({ message: "Invalid club ID" });
@@ -37,7 +37,7 @@ router.get(
 router.get(
   "/global",
   ensureAuthenticated,
-  async (req, res) => {
+  async (_req, res) => {
      try {
       const globalRankings = await db.query.users.findMany({
         orderBy: [desc(users.elo)],
@@ -56,7 +56,7 @@ router.get(
 router.post(
   "/update",
   ensureAuthenticated,
-  async (req, res) => {
+  async (_req, res) => {
     // This logic is complex and depends on a match result being submitted.
     // It should be triggered after a match is recorded.
     // For now, this is a placeholder.
@@ -65,4 +65,3 @@ router.post(
 );
 
 export default router;
-

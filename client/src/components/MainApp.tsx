@@ -32,12 +32,17 @@ export default function MainApp() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [matchRequestUser, setMatchRequestUser] = useState<User | null>(null);
   const [matchResultId, setMatchResultId] = useState<number | null>(null);
-  const [matchHistoryUserId, setMatchHistoryUserId] = useState<string | null>(null);
+  const [matchHistoryUserId, setMatchHistoryUserId] = useState<string | null>(
+    null
+  );
   const [isClubCreationModalOpen, setClubCreationModalOpen] = useState(false);
   const [isClubSearchModalOpen, setClubSearchModalOpen] = useState(false);
-  const [selectedClubForManagement, setSelectedClubForManagement] = useState<Club | null>(null);
-  const [selectedClubForAnalytics, setSelectedClubForAnalytics] = useState<Club | null>(null);
-  const [selectedClubForBracket, setSelectedClubForBracket] = useState<Club | null>(null);
+  const [selectedClubForManagement, setSelectedClubForManagement] =
+    useState<Club | null>(null);
+  const [selectedClubForAnalytics, setSelectedClubForAnalytics] =
+    useState<Club | null>(null);
+  const [selectedClubForBracket, setSelectedClubForBracket] =
+    useState<Club | null>(null);
   const [isPointChargeModalOpen, setPointChargeModalOpen] = useState(false);
   const [isShopModalOpen, setShopModalOpen] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModalOpen] = useState(false);
@@ -49,7 +54,7 @@ export default function MainApp() {
   if (!user) {
     return <LoginScreen />;
   }
-  
+
   if (!profile) {
     return <SplashScreen onComplete={() => {}} />;
   }
@@ -62,15 +67,15 @@ export default function MainApp() {
     <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <main className="flex-1 overflow-y-auto pb-16">
         {/* Render content based on activeTab */}
-        {activeTab === 'club' && myClubMemberships && (
-            <MyClubTabContent
-                myClubMemberships={myClubMemberships}
-                isLoading={clubsLoading}
-                onManageClub={(club) => setSelectedClubForManagement(club)}
-            />
+        {activeTab === "club" && myClubMemberships && (
+          <MyClubTabContent
+            myClubMemberships={myClubMemberships}
+            isLoading={clubsLoading}
+            onManageClub={(club) => setSelectedClubForManagement(club)}
+          />
         )}
       </main>
-      
+
       {/* Modals */}
       <PostCreateModal
         isOpen={isPostModalOpen}
@@ -79,10 +84,9 @@ export default function MainApp() {
       />
       {selectedUser && (
         <UserProfileModal
-          user={selectedUser}
+          userId={selectedUser.id}
           isOpen={!!selectedUser}
           onClose={() => setSelectedUser(null)}
-          onMatchRequest={setMatchRequestUser}
         />
       )}
       {matchRequestUser && profile && (
@@ -95,18 +99,25 @@ export default function MainApp() {
           isLoading={false}
         />
       )}
-      {matchResultId && (
+      {matchResultId && user && (
         <MatchResultModal
           isOpen={!!matchResultId}
           onClose={() => setMatchResultId(null)}
-          matchId={matchResultId}
+          match={{
+            id: matchResultId,
+            requesterId: user.uid,
+            targetId: "",
+            status: "completed",
+            createdAt: new Date(),
+          }}
+          currentUser={profile}
+          opponent={null}
         />
       )}
-       {matchHistoryUserId && (
+      {matchHistoryUserId && (
         <MatchHistoryModal
           isOpen={!!matchHistoryUserId}
           onClose={() => setMatchHistoryUserId(null)}
-          userId={matchHistoryUserId}
         />
       )}
       <ClubCreationModal
@@ -120,25 +131,31 @@ export default function MainApp() {
       {selectedClubForManagement && (
         <ClubManagementModal
           isOpen={!!selectedClubForManagement}
-          club={selectedClubForManagement}
+          membership={{
+            club: selectedClubForManagement,
+            membership: { role: "owner" },
+          }}
           onClose={() => setSelectedClubForManagement(null)}
         />
       )}
       {selectedClubForAnalytics && (
-         <ClubAnalyticsModal
+        <ClubAnalyticsModal
           isOpen={!!selectedClubForAnalytics}
-          club={selectedClubForAnalytics}
+          clubId={selectedClubForAnalytics.id}
+          clubName={selectedClubForAnalytics.name}
+          members={[]}
           onClose={() => setSelectedClubForAnalytics(null)}
         />
       )}
       {selectedClubForBracket && (
         <BracketGeneratorModal
           isOpen={!!selectedClubForBracket}
-          club={selectedClubForBracket}
+          clubId={selectedClubForBracket.id}
+          members={[]}
           onClose={() => setSelectedClubForBracket(null)}
         />
       )}
-       <PointChargeModal
+      <PointChargeModal
         isOpen={isPointChargeModalOpen}
         onClose={() => setPointChargeModalOpen(false)}
       />
@@ -149,10 +166,12 @@ export default function MainApp() {
       />
 
       <footer className="fixed bottom-0 left-0 right-0">
-        <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        <BottomNavigation
+          activeTab={activeTab}
+          onTabChange={(tab) => setActiveTab(tab)}
+        />
       </footer>
       <Toaster />
     </div>
   );
 }
-

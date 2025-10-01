@@ -27,12 +27,16 @@ export default function MatchResultModal({
 
   if (!isOpen || !match || !opponent) return null;
 
-  const isRequester = match.requesterId === currentUser.id;
+  const isRequester = 'requesterId' in match && match.requesterId === currentUser.id;
 
   const handleResult = async (result: 'requester_won' | 'target_won' | 'draw') => {
     setLoading(true);
     try {
-      await completeMatch(match.id, result);
+      if (typeof match.id === 'number') {
+        await completeMatch(match.id.toString(), result);
+      } else {
+        throw new Error("Match ID is not a string");
+      }
       
       const resultMessages = {
         'requester_won': isRequester ? '승리했습니다! 🎉' : '아쉽게 패배했습니다 😔',
@@ -87,8 +91,8 @@ export default function MatchResultModal({
             <div className="flex items-center justify-center space-x-4">
               <div className="text-center">
                 <img 
-                  src={getAvatarSrc(currentUser.photoURL, currentUser, 128)} 
-                  alt={currentUser.username} 
+                  src={getAvatarSrc(currentUser.avatarUrl, currentUser, 128)} 
+                  alt={currentUser.username || ""} 
                   className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
                 />
                 <p className="font-semibold text-sm" data-testid="text-current-user">
@@ -99,8 +103,8 @@ export default function MatchResultModal({
               <div className="text-2xl font-bold text-muted-foreground">VS</div>
               <div className="text-center">
                 <img 
-                  src={getAvatarSrc(opponent.photoURL, opponent, 128)} 
-                  alt={opponent.username} 
+                  src={getAvatarSrc(opponent.avatarUrl, opponent, 128)} 
+                  alt={opponent.username || ""} 
                   className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
                 />
                 <p className="font-semibold text-sm" data-testid="text-opponent">

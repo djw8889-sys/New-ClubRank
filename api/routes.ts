@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { User } from '../shared/schema'; // 경로 수정
 import { registerClubRoutes } from './routes/clubs.js';
-import { registerRankingRoutes } from './routes/rankings.js';
+import registerRankingRoutes from './routes/rankings.js';
 import { registerUserRoutes } from './routes/users.js';
 
 // AuthenticatedRequest 타입을 명확히 정의하고 export 합니다.
@@ -20,7 +20,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 
 export function registerRoutes(app: any) {
   registerClubRoutes(app);
-  registerRankingRoutes(app);
+  app.use('/rankings', registerRankingRoutes);
   registerUserRoutes(app);
 
   // 나머지 라우트들...
