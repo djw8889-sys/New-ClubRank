@@ -3,11 +3,13 @@ import { registerRoutes } from "./routes.js";
 import { setupVite, serveStatic, log } from "./vite.js";
 import fs from "fs";
 import path from "path";
+import http from 'http';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// 로깅 미들웨어는 그대로 사용
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -26,11 +28,9 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + "…";
       }
-
       log(logLine);
     }
   });
@@ -39,42 +39,33 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // registerRoutes가 http.Server를 반환하므로, express app 인스턴스를 가져옵니다.
   const server = await registerRoutes(app);
-
+  
+  // Vercel 환경에서는 Vite나 정적 파일 서빙을 직접 처리하지 않으므로, 이 부분을 건너뜁니다.
+  // vercel.json이 이 역할을 대신합니다.
+  // 로컬 개발 환경에서만 Vite 미들웨어를 설정합니다.
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  }
+  
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
     res.status(status).json({ message });
-    throw err;
+    console.error(err);
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-
-  // Check if built files exist - if so, serve static files even in development
-  // This allows production domains to work with built assets
-  const distPath = path.resolve(import.meta.dirname, "dist/public");
-  const hasBuiltFiles = fs.existsSync(distPath);
-
-  if (app.get("env") === "development" && !hasBuiltFiles) {
-    await setupVite(app, server);
-  } else {
-    // Serve static files if in production OR if built files exist
-    serveStatic(app);
+  // 로컬 개발 환경을 위한 리스너
+  // Vercel의 프로덕션 환경에서는 이 코드가 실행되지 않습니다.
+  if (process.env.NODE_ENV === 'development') {
+    const port = parseInt(process.env.PORT || '5000', 10);
+    server.listen(port, () => {
+        console.log(`Development server listening on http://localhost:${port}`);
+    });
   }
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || '5000', 10);
-  
-  // listen 호출 방식을 가장 기본적인 형태로 변경하여 오류 해결 시도
-  server.listen(port, () => {
-    log(`Server listening on port ${port}`);
-    log(`Access your app at http://localhost:${port}`);
-  });
 })();
+
+// Vercel이 최종적으로 사용할 수 있도록 Express 앱을 export합니다.
+export default app;
 
