@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 interface MyClubTabContentProps {
-  myClubMemberships: ClubMember[] | undefined;
+  myClubMemberships: { club: Club; role: string }[] | undefined;
   isLoading: boolean;
   onManageClub: (club: Club) => void;
 }
@@ -38,7 +38,7 @@ export default function MyClubTabContent({
 
   return (
     <div className="p-4 space-y-4">
-      {myClubMemberships.map((m: any) => (
+      {myClubMemberships.map((m) => (
         <Card key={m.club.id}>
           <CardHeader>
             <CardTitle>{m.club.name}</CardTitle>
@@ -53,3 +53,4 @@ export default function MyClubTabContent({
     </div>
   );
 }
+

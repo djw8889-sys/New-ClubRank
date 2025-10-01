@@ -1,145 +1,88 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./use-auth";
-import { Club, ClubMember, User, insertClubSchema } from "@shared/schema";
-import { z } from "zod";
+import { Club, NewClub, ClubMember } from "@shared/schema";
 
-// 내 클럽 멤버십 정보를 가져오는 훅
-export function useMyClubMembership() {
-  const { user } = useAuth();
-
-  const {
-    data: myClubMemberships,
-    isLoading,
-    error,
-  } = useQuery<ClubMember[]>({
-    queryKey: ["my-club-memberships", user?.uid],
-    queryFn: async () => {
-      const res = await fetch("/api/clubs/my-memberships");
-      if (!res.ok) {
-        throw new Error("Failed to fetch club memberships");
-      }
-      return res.json();
-    },
-    enabled: !!user,
-  });
-
-  return { myClubMemberships, isLoading, error };
+async function fetcher(url: string, options?: RequestInit) {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const errorBody = await res.json();
+    throw new Error(errorBody.message || "An error occurred");
+  }
+  return res.json();
 }
 
-// 특정 클럽의 멤버 목록을 가져오는 훅
-export function useClubMembers(clubId: number | undefined) {
-    return useQuery<(User & { member: ClubMember })[]>({
-        queryKey: ['club-members', clubId],
-        queryFn: async () => {
-            const res = await fetch(`/api/clubs/${clubId}/members`);
-            if (!res.ok) {
-                throw new Error('Failed to fetch club members');
-            }
-            return res.json();
-        },
-        enabled: !!clubId, // clubId가 있을 때만 쿼리 실행
-    });
-}
-
-// 클럽을 탈퇴하는 뮤테이션 훅
-export function useLeaveClub() {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, number>({
-        mutationFn: async (clubId: number) => {
-            const res = await fetch(`/api/clubs/${clubId}/membership`, {
-                method: 'DELETE',
-            });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Failed to leave club');
-            }
-        },
-        onSuccess: (_, clubId) => {
-            // 성공 시 관련 쿼리를 무효화하여 데이터를 새로고침
-            queryClient.invalidateQueries({ queryKey: ['my-club-memberships'] });
-            queryClient.invalidateQueries({ queryKey: ['club-members', clubId] });
-        },
-    });
-}
-
-// 새로운 클럽을 생성하는 뮤테이션 훅
-export function useCreateClub() {
-    const queryClient = useQueryClient();
-    return useMutation<any, Error, z.infer<typeof insertClubSchema>>({
-        mutationFn: async (newClub) => {
-            const res = await fetch('/api/clubs', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(newClub),
-            });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Failed to create club');
-            }
-            return res.json();
-        },
-        onSuccess: () => {
-            // 클럽 생성 성공 시, 클럽 목록과 내 멤버십 정보를 새로고침
-            queryClient.invalidateQueries({ queryKey: ['clubs'] });
-            queryClient.invalidateQueries({ queryKey: ['my-club-memberships'] });
-        },
-    });
-}
-
-// 클럽을 검색하는 훅
-export function useClubSearch(query: string) {
-    return useQuery<Club[]>({
-        queryKey: ['club-search', query],
-        queryFn: async () => {
-            const res = await fetch(`/api/clubs/search?q=${encodeURIComponent(query)}`);
-            if (!res.ok) {
-                throw new Error('Failed to search clubs');
-            }
-            return res.json();
-        },
-        enabled: !!query, // 검색어가 있을 때만 쿼리 실행
-    });
-}
-
-// 클럽에 가입하는 뮤테이션 훅
-export function useJoinClub() {
-    const queryClient = useQueryClient();
-    return useMutation<void, Error, number>({
-        mutationFn: async (clubId: number) => {
-            const res = await fetch(`/api/clubs/${clubId}/membership`, {
-                method: 'POST',
-            });
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || 'Failed to join club');
-            }
-        },
-        onSuccess: (_, clubId) => {
-            // 성공 시 관련 쿼리를 무효화하여 데이터를 새로고침
-            queryClient.invalidateQueries({ queryKey: ['my-club-memberships'] });
-            queryClient.invalidateQueries({ queryKey: ['club-members', clubId] });
-            queryClient.invalidateQueries({ queryKey: ['club-search'] });
-        },
-    });
-}
-
-// MainApp에서 사용하는 클럽 목록을 가져오는 훅 (<<--- 이 부분이 추가되었습니다!)
+// Hook to get the current user's club memberships
 export function useClubs() {
   const { user } = useAuth();
-
-  // useQuery의 결과를 직접 반환하여 data, isLoading 등을 사용할 수 있도록 함
-  return useQuery<ClubMember[]>({
-    queryKey: ["my-club-memberships", user?.uid],
-    queryFn: async () => {
-      const res = await fetch("/api/clubs/my-memberships");
-      if (!res.ok) {
-        throw new Error("Failed to fetch club memberships");
-      }
-      return res.json();
-    },
+  return useQuery<{ club: Club; role: string }[], Error>({
+    queryKey: ["clubs", "membership"],
+    queryFn: () => fetcher("/api/clubs/my-membership"),
     enabled: !!user,
+  });
+}
+
+// Hook to get a list of all clubs (or search)
+export function useClubSearch(searchTerm: string = "") {
+  return useQuery<Club[], Error>({
+    queryKey: ["clubs", "search", searchTerm],
+    queryFn: () => fetcher(`/api/clubs?search=${searchTerm}`),
+  });
+}
+
+// Hook to get members of a specific club
+export function useClubMembers(clubId: number | null) {
+  return useQuery<
+    (User & { member: { role: string; joinedAt: string } })[]
+  , Error>({
+    queryKey: ["clubs", "members", clubId],
+    queryFn: () => fetcher(`/api/clubs/${clubId}/members`),
+    enabled: !!clubId,
+  });
+}
+
+// Hook to create a new club
+export function useCreateClub() {
+  const queryClient = useQueryClient();
+  return useMutation<Club, Error, NewClub>({
+    mutationFn: (newClub) =>
+      fetcher("/api/clubs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newClub),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["clubs"] });
+    },
+  });
+}
+
+// Hook to join a club
+export function useJoinClub() {
+    const queryClient = useQueryClient();
+    return useMutation<ClubMember, Error, { clubId: number }>({
+        mutationFn: ({ clubId }) =>
+            fetcher(`/api/clubs/${clubId}/join`, {
+                method: 'POST',
+            }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['clubs', 'membership'] });
+            queryClient.invalidateQueries({ queryKey: ['clubs', 'members', data.clubId] });
+        },
+    });
+}
+
+// Hook to leave a club
+export function useLeaveClub() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { clubId: number }>({
+    mutationFn: ({ clubId }) =>
+      fetcher(`/api/clubs/${clubId}/leave`, {
+        method: "POST",
+      }),
+    onSuccess: (_, { clubId }) => {
+      queryClient.invalidateQueries({ queryKey: ["clubs", "membership"] });
+      queryClient.invalidateQueries({ queryKey: ["clubs", "members", clubId] });
+    },
   });
 }
 

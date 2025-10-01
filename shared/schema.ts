@@ -1,85 +1,99 @@
 import {
   pgTable,
-  text,
+  serial,
   varchar,
   timestamp,
   integer,
-  serial,
-  primaryKey,
+  text,
   boolean,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { z } from "zod";
 
 export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  username: varchar("username", { length: 255 }).unique(),
-  avatarUrl: text("avatar_url"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastSeen: timestamp("last_seen").defaultNow().notNull(),
-  points: integer("points").default(0).notNull(),
-  isAdmin: boolean("is_admin").default(false).notNull(),
+  id: varchar("id").primaryKey(),
+  username: varchar("username"),
+  avatarUrl: varchar("avatar_url"),
+  email: varchar("email"),
+  elo: integer("elo").default(1200),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  bio: text("bio"),
+  location: varchar("location"),
+  isAdmin: boolean("is_admin").default(false),
+  points: integer("points").default(0),
 });
-
-export type User = typeof users.$inferSelect;
-export const insertUserSchema = createInsertSchema(users);
 
 export const clubs = pgTable("clubs", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 255 }).unique().notNull(),
+  name: varchar("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
   description: text("description"),
-  logoUrl: text("logo_url"),
-  ownerId: text("owner_id")
+  logoUrl: varchar("logo_url"),
+  ownerId: varchar("owner_id")
     .references(() => users.id)
     .notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export type Club = typeof clubs.$inferSelect;
-export const insertClubSchema = createInsertSchema(clubs);
-
-export const clubMembers = pgTable(
-  "club_members",
-  {
-    clubId: integer("club_id")
-      .references(() => clubs.id)
-      .notNull(),
-    userId: text("user_id")
-      .references(() => users.id)
-      .notNull(),
-    role: varchar("role", { length: 50 }).default("member").notNull(), // e.g., 'owner', 'admin', 'member'
-    joinedAt: timestamp("joined_at").defaultNow().notNull(),
-  },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.clubId, table.userId] }),
-    };
-  }
-);
-
-export const insertClubMemberSchema = createInsertSchema(clubMembers);
-
-export const rankings = pgTable("rankings", {
-    clubId: integer("club_id").references(() => clubs.id).notNull(),
-    userId: text("user_id").references(() => users.id).notNull(),
-    rating: integer("rating").default(1200).notNull(),
-    wins: integer("wins").default(0),
-    losses: integer("losses").default(0),
-    draws: integer("draws").default(0),
-}, (table) => {
-    return {
-        pk: primaryKey({ columns: [table.clubId, table.userId] })
-    }
+export const clubMembers = pgTable("club_members", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id")
+    .references(() => users.id)
+    .notNull(),
+  clubId: integer("club_id")
+    .references(() => clubs.id)
+    .notNull(),
+  role: varchar("role").default("member").notNull(), // e.g., 'admin', 'member'
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
 export const matches = pgTable("matches", {
+  id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  clubId: integer("club_id").references(() => clubs.id),
+  player1Id: varchar("player1_id")
+    .references(() => users.id)
+    .notNull(),
+  player2Id: varchar("player2_id")
+    .references(() => users.id)
+    .notNull(),
+  result: varchar("result"), // 'player1_wins', 'player2_wins', 'draw'
+  eloChange: integer("elo_change"),
+  status: varchar("status").default("pending").notNull(), // 'pending', 'accepted', 'completed', 'rejected'
+  scheduledAt: timestamp("scheduled_at"),
+  location: varchar("location"),
+});
+
+export const posts = pgTable("posts", {
     id: serial("id").primaryKey(),
-    clubId: integer("club_id").references(() => clubs.id).notNull(),
-    player1Id: text("player1_id").references(() => users.id).notNull(),
-    player2Id: text("player2_id").references(() => users.id).notNull(),
-    result: varchar("result", { length: 10 }).notNull(), // 'win', 'loss', 'draw' for player1
-    eloChange: integer("elo_change"),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    clubId: integer("club_id").references(() => clubs.id),
+    content: text("content").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const comments = pgTable("comments", {
+    id: serial("id").primaryKey(),
+    userId: varchar("user_id").references(() => users.id).notNull(),
+    postId: integer("post_id").references(() => posts.id).notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Zod schemas for validation
+export const insertUserSchema = createInsertSchema(users);
+export const insertClubSchema = createInsertSchema(clubs);
+export const insertClubMemberSchema = createInsertSchema(clubMembers);
+
+// TypeScript types
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type Club = typeof clubs.$inferSelect;
+export type NewClub = typeof clubs.$inferInsert;
+export type ClubMember = typeof clubMembers.$inferSelect;
+export type NewClubMember = typeof clubMembers.$inferInsert;
 export type Match = typeof matches.$inferSelect;
+export type NewMatch = typeof matches.$inferInsert;
+export type Post = typeof posts.$inferSelect;
+export type Comment = typeof comments.$inferSelect;
 
