@@ -1,11 +1,8 @@
-import { useState, Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useClubs } from "@/hooks/use-clubs";
-import { useOnlineUsers } from "@/hooks/use-online-users";
 
-import { User, Club, Match, ClubMember, Post, Comment } from "@shared/schema";
-import { getTierInfo } from "@/utils/tierCalculator";
-import { getAvatarSrc } from "@/utils/avatar";
+import { User, Club } from "@shared/schema";
 
 import { Toaster } from "@/components/ui/toaster";
 import BottomNavigation from "./BottomNavigation";

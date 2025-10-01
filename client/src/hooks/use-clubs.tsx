@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./use-auth";
-import { Club, NewClub, ClubMember } from "@shared/schema";
+import { Club, NewClub, ClubMember, User } from "@shared/schema";
 
 async function fetcher(url: string, options?: RequestInit) {
   const res = await fetch(url, options);
@@ -31,9 +31,7 @@ export function useClubSearch(searchTerm: string = "") {
 
 // Hook to get members of a specific club
 export function useClubMembers(clubId: number | null) {
-  return useQuery<
-    (User & { member: { role: string; joinedAt: string } })[]
-  , Error>({
+  return useQuery< (User & { member: { role: string; joinedAt: string } })[], Error>({
     queryKey: ["clubs", "members", clubId],
     queryFn: () => fetcher(`/api/clubs/${clubId}/members`),
     enabled: !!clubId,
