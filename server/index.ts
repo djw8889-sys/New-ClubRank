@@ -52,12 +52,12 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
-  
+
   // Check if built files exist - if so, serve static files even in development
   // This allows production domains to work with built assets
   const distPath = path.resolve(import.meta.dirname, "dist/public");
   const hasBuiltFiles = fs.existsSync(distPath);
-  
+
   if (app.get("env") === "development" && !hasBuiltFiles) {
     await setupVite(app, server);
   } else {
@@ -70,11 +70,11 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  
+  // listen 호출 방식을 가장 기본적인 형태로 변경하여 오류 해결 시도
+  server.listen(port, () => {
+    log(`Server listening on port ${port}`);
+    log(`Access your app at http://localhost:${port}`);
   });
 })();
+
