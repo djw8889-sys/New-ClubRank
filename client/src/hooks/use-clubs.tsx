@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./use-auth";
-import { ClubMember, User, insertClubSchema } from "@shared/schema";
+import { Club, ClubMember, User, insertClubSchema } from "@shared/schema";
 import { z } from "zod";
 
 // 내 클럽 멤버십 정보를 가져오는 훅
@@ -62,7 +62,7 @@ export function useLeaveClub() {
     });
 }
 
-// 새로운 클럽을 생성하는 뮤테이션 훅 (<<--- 이 부분이 추가되었습니다!)
+// 새로운 클럽을 생성하는 뮤테이션 훅
 export function useCreateClub() {
     const queryClient = useQueryClient();
     return useMutation<any, Error, z.infer<typeof insertClubSchema>>({
@@ -84,6 +84,43 @@ export function useCreateClub() {
             // 클럽 생성 성공 시, 클럽 목록과 내 멤버십 정보를 새로고침
             queryClient.invalidateQueries({ queryKey: ['clubs'] });
             queryClient.invalidateQueries({ queryKey: ['my-club-memberships'] });
+        },
+    });
+}
+
+// 클럽을 검색하는 훅 (<<--- 이 부분이 추가되었습니다!)
+export function useClubSearch(query: string) {
+    return useQuery<Club[]>({
+        queryKey: ['club-search', query],
+        queryFn: async () => {
+            const res = await fetch(`/api/clubs/search?q=${encodeURIComponent(query)}`);
+            if (!res.ok) {
+                throw new Error('Failed to search clubs');
+            }
+            return res.json();
+        },
+        enabled: !!query, // 검색어가 있을 때만 쿼리 실행
+    });
+}
+
+// 클럽에 가입하는 뮤테이션 훅 (<<--- 이 부분이 추가되었습니다!)
+export function useJoinClub() {
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, number>({
+        mutationFn: async (clubId: number) => {
+            const res = await fetch(`/api/clubs/${clubId}/membership`, {
+                method: 'POST',
+            });
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to join club');
+            }
+        },
+        onSuccess: (_, clubId) => {
+            // 성공 시 관련 쿼리를 무효화하여 데이터를 새로고침
+            queryClient.invalidateQueries({ queryKey: ['my-club-memberships'] });
+            queryClient.invalidateQueries({ queryKey: ['club-members', clubId] });
+            queryClient.invalidateQueries({ queryKey: ['club-search'] });
         },
     });
 }
