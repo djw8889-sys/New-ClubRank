@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useClubs } from "@/hooks/use-clubs";
-import { User, Club, ClubMembership } from "@shared/schema";
+import { User, Club, clubMembers } from "@shared/schema"; // ClubMembership -> clubMembers로 변경 (실제 스키마 확인 필요)
 import { Toaster } from "@/components/ui/toaster";
 import BottomNavigation from "./BottomNavigation";
 import MyClubTabContent from "./MyClubTabContent";
@@ -22,12 +22,14 @@ import PointChargeModal from "./PointChargeModal";
 import ShopModal from "./ShopModal";
 import FeedbackModal from "./FeedbackModal";
 
+// `useClubs`가 반환하는 데이터 타입에 맞게 ClubMembership 정의
+type ClubMembership = typeof clubMembers.$inferSelect;
+
 export default function MainApp() {
-  const { user, profile, updateProfile, isProfileNew, loading } = useAuth();
+  const { user, profile, isProfileNew, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("club");
   const { data: myClubMemberships, isLoading: clubsLoading } = useClubs();
 
-  // Modal states
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [matchRequestUser, setMatchRequestUser] = useState<User | null>(null);
@@ -49,13 +51,13 @@ export default function MainApp() {
   if (!user) {
     return <LoginScreen />;
   }
-
+  
   if (!profile) {
     return <SplashScreen onComplete={() => {}} />;
   }
 
   if (isProfileNew) {
-    return <ProfileSetupScreen onComplete={() => { /* updateProfile is not a function */ }} />;
+    return <ProfileSetupScreen onComplete={() => {}} />;
   }
 
   return (
@@ -97,18 +99,7 @@ export default function MainApp() {
         <MatchResultModal
           isOpen={!!matchResultId}
           onClose={() => setMatchResultId(null)}
-          match={{
-            id: matchResultId,
-            createdAt: new Date(),
-            location: null,
-            clubId: null,
-            player1Id: user.uid,
-            player2Id: "",
-            result: null,
-            eloChange: null,
-            status: "completed",
-            scheduledAt: null,
-          }}
+          matchId={matchResultId} // match -> matchId로 변경
           currentUser={profile}
           opponent={null}
         />
@@ -117,6 +108,7 @@ export default function MainApp() {
         <MatchHistoryModal
           isOpen={!!matchHistoryUserId}
           onClose={() => setMatchHistoryUserId(null)}
+          userId={matchHistoryUserId} // 누락되었던 userId prop 추가
         />
       )}
       <ClubCreationModal

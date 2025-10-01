@@ -20,14 +20,13 @@ export default function MatchRequestModal({
   isOpen,
   onClose,
   targetUser,
+  isLoading,
 }: MatchRequestModalProps) {
   const { user } = useAuth();
   const { addDocument } = useFirestore();
   const { toast } = useToast();
-  const loading = false; // Placeholder for loading state
 
   const handleMatchRequest = async () => {
-    // Logic to handle match request
     if (!user) return;
     try {
       await addDocument('matches', {
@@ -51,7 +50,7 @@ export default function MatchRequestModal({
         <h2 className="text-xl font-bold mb-4">Request Match</h2>
         <div className="flex items-center space-x-4 mb-4">
           <img
-            src={getAvatarSrc(targetUser.avatarUrl, targetUser)}
+            src={getAvatarSrc(targetUser.avatarUrl, { ...targetUser, username: targetUser.username || undefined, email: targetUser.email || undefined })}
             alt={targetUser.username || 'user'}
             className="w-16 h-16 rounded-full"
           />
@@ -66,8 +65,8 @@ export default function MatchRequestModal({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleMatchRequest} disabled={loading}>
-            {loading ? <LoadingSpinner size="sm" /> : 'Send Request'}
+          <Button onClick={handleMatchRequest} disabled={isLoading}>
+            {isLoading ? <LoadingSpinner size="sm" /> : 'Send Request'}
           </Button>
         </div>
       </div>
