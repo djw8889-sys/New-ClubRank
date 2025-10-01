@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreatePost } from "@/hooks/use-posts.tsx"; // 경로 수정 및 확장자 추가
+import { useCreatePost } from "@/hooks/use-posts"; // 경로에서 확장자 제거
 
 interface PostCreateModalProps {
   isOpen: boolean;
@@ -48,3 +48,4 @@ export default function PostCreateModal({ isOpen, onClose, onPostCreated }: Post
     </Dialog>
   );
 }
+
