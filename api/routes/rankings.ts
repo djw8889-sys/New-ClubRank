@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response } from "express"; // NextFunction import 제거
 import { db } from "../storage.js";
 import { users } from "../../shared/schema.js";
 import { desc } from "drizzle-orm";
@@ -11,8 +11,8 @@ const router = Router();
 router.get(
   "/club/:clubId",
   ensureAuthenticated,
-  async (req: Request, res: Response) => { // req 타입을 일반 Request로 받습니다.
-    const authReq = req as AuthenticatedRequest; // 타입 단언을 사용합니다.
+  async (req: Request, res: Response) => {
+    const authReq = req as AuthenticatedRequest;
     const clubId = parseInt(authReq.params.clubId, 10);
     if (isNaN(clubId)) {
       return res.status(400).json({ message: "Invalid club ID" });
@@ -35,7 +35,7 @@ router.get(
 router.get(
   "/global",
   ensureAuthenticated,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => { // 사용하지 않는 req를 _req로 변경
      try {
       const globalRankings = await db.query.users.findMany({
         orderBy: [desc(users.elo)],
@@ -54,7 +54,7 @@ router.get(
 router.post(
   "/update",
   ensureAuthenticated,
-  async (req: Request, res: Response) => {
+  async (_req: Request, res: Response) => { // 사용하지 않는 req를 _req로 변경
     res.status(501).json({ message: "Not implemented" });
   }
 );
