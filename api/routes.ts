@@ -11,7 +11,17 @@ export interface AuthenticatedRequest extends Request {
   user?: User;
 }
 
-export async function registerRoutes(app: Router) {
+export function ensureAuthenticated(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
+        return next();
+    }
+    if (req.user) {
+        return next();
+    }
+    res.status(401).json({ message: "Unauthorized" });
+}
+
+export function registerRoutes(app: Router) {
   const server = app;
 
   const sessionMiddleware = session({
@@ -19,7 +29,7 @@ export async function registerRoutes(app: Router) {
     secret: process.env.SESSION_SECRET || "fallback-secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: app.get("env") === "production" },
+    cookie: { secure: server.get("env") === "production" },
   });
 
   server.use(sessionMiddleware);
@@ -57,13 +67,6 @@ export async function registerRoutes(app: Router) {
 
   server.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.json({ message: "Logged in successfully", user: req.user });
-  });
-
-  server.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.json({ message: "Logged out successfully" });
-    });
   });
 
   server.post("/api/register", async (req: AuthenticatedRequest, res) => {

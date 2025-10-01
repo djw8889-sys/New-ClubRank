@@ -43,7 +43,7 @@ export default function MainApp() {
 
   if (loading) return <SplashScreen onComplete={() => {}} />;
   if (!user) return <LoginScreen />;
-  if (!profile || isProfileNew) return <ProfileSetupScreen onComplete={(newProfile) => updateProfile(newProfile)} />;
+  if (!profile || isProfileNew) return <ProfileSetupScreen onComplete={(newProfile: Partial<User>) => updateProfile(newProfile)} />;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">

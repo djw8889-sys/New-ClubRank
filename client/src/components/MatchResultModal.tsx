@@ -3,7 +3,6 @@ import { useMatchById } from "@/hooks/use-matches";
 import { getAvatarSrc } from "@/utils/avatar";
 import { Match, User } from "@shared/schema";
 
-// Define the type for the data returned by the hook
 interface MatchWithPlayers {
     match: Match;
     player1: User;

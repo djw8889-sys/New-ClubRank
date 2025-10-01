@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User as FirebaseUser } from "firebase/auth";
+import { User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { NewUser, User } from "@shared/schema";
@@ -7,6 +7,7 @@ import { NewUser, User } from "@shared/schema";
 interface AuthContextType {
   user: FirebaseUser | null;
   profile: User | null;
+  signInWithGoogle: () => Promise<void>;
   updateProfile: (newProfile: Partial<User>) => Promise<void>;
   isProfileNew: boolean;
   loading: boolean;
@@ -30,14 +31,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setProfile(userDoc.data() as User);
           setIsProfileNew(false);
         } else {
-          const newProfile: NewUser = {
+          const newProfileData: NewUser = {
             id: firebaseUser.uid,
             email: firebaseUser.email,
             username: firebaseUser.displayName,
             avatarUrl: firebaseUser.photoURL,
           };
-          await setDoc(userDocRef, newProfile);
-          setProfile(newProfile as User);
+          await setDoc(userDocRef, newProfileData);
+          setProfile(newProfileData as User);
           setIsProfileNew(true);
         }
       } else {
@@ -49,6 +50,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error during sign-in:", error);
+    }
+  };
+
   const updateProfile = async (newProfileData: Partial<User>) => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
@@ -59,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, updateProfile, isProfileNew, loading }}>
+    <AuthContext.Provider value={{ user, profile, updateProfile, signInWithGoogle, isProfileNew, loading }}>
       {children}
     </AuthContext.Provider>
   );
