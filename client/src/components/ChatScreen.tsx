@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useChat } from '@/hooks/use-chat'; // useSendMessage 제거
-// Chat, Message import 제거
+import { useChat } from '@/hooks/use-chat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAvatarSrc } from '@/utils/avatar';
+import { Message } from '@shared/schema'; // 실제 Message 타입을 schema에서 가져옵니다.
 
 interface ChatScreenProps {
   chatId: string;
@@ -12,7 +12,7 @@ interface ChatScreenProps {
 
 export default function ChatScreen({ chatId }: ChatScreenProps) {
   const { user } = useAuth();
-  const { messages, loading } = useChat(chatId);
+  const { messages, loading, sendMessage } = useChat(chatId);
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -22,10 +22,10 @@ export default function ChatScreen({ chatId }: ChatScreenProps) {
 
   useEffect(scrollToBottom, [messages]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !user) return;
-    // sendMessage(newMessage); // sendMessage 로직이 useChat 훅 내부에 있어야 함
+    await sendMessage(chatId, newMessage.trim());
     setNewMessage('');
   };
 
@@ -34,9 +34,9 @@ export default function ChatScreen({ chatId }: ChatScreenProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4">
-        {messages.map((msg, index) => (
+        {messages.map((msg: Message, index: number) => (
           <div key={index} className={`flex items-start gap-2.5 ${msg.senderId === user?.uid ? 'justify-end' : ''}`}>
-             <img className="w-8 h-8 rounded-full" src={getAvatarSrc(null, {email: msg.senderId})} alt="avatar" />
+             <img className="w-8 h-8 rounded-full" src={getAvatarSrc(null, {email: msg.senderId || undefined})} alt="avatar" />
             <div className="flex flex-col gap-1">
                <div className="flex items-center space-x-2 rtl:space-x-reverse">
                   <span className="text-sm font-semibold text-gray-900 dark:text-white">{msg.senderId}</span>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useClubs } from "@/hooks/use-clubs";
-import { User, Club, clubMembers } from "@shared/schema";
+import { User, Club } from "@shared/schema";
 import { Toaster } from "@/components/ui/toaster";
 import BottomNavigation from "./BottomNavigation";
 import MyClubTabContent from "./MyClubTabContent";
@@ -22,6 +22,7 @@ import PointChargeModal from "./PointChargeModal";
 import ShopModal from "./ShopModal";
 import FeedbackModal from "./FeedbackModal";
 
+// useClubs의 반환 데이터 타입에서 ClubMembership 타입을 추론합니다.
 type ClubMembership = NonNullable<ReturnType<typeof useClubs>['data']>[0];
 
 export default function MainApp() {
@@ -94,9 +95,7 @@ export default function MainApp() {
         <MatchResultModal
           isOpen={!!matchResultId}
           onClose={() => setMatchResultId(null)}
-          matchId={matchResultId}
-          currentUser={profile}
-          opponent={null}
+          matchId={matchResultId} // currentUser prop 제거
         />
       )}
        {matchHistoryUserId && (

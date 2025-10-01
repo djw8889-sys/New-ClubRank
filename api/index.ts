@@ -1,9 +1,9 @@
-import express from "express";
-import { registerRoutes } from "./routes.js";
+import express from 'express';
+import registerRoutes from './routes.js'; // 중괄호 {} 제거
 
 const app = express();
-app.use(express.json());
 
-registerRoutes(app);
+// registerRoutes 함수를 호출하여 라우트를 등록합니다.
+const configuredApp = registerRoutes(app);
 
-export default app;
+export default configuredApp;
