@@ -117,13 +117,16 @@ export default function MainApp() {
       {selectedClubForAnalytics && (
          <ClubAnalyticsModal
           isOpen={!!selectedClubForAnalytics}
+          clubId={selectedClubForAnalytics.id}
           clubName={selectedClubForAnalytics.name}
+          members={[]}
           onClose={() => setSelectedClubForAnalytics(null)}
         />
       )}
       {selectedClubForBracket && (
         <BracketGeneratorModal
           isOpen={!!selectedClubForBracket}
+          clubId={selectedClubForBracket.id}
           members={[]}
           onClose={() => setSelectedClubForBracket(null)}
         />
