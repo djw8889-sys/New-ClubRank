@@ -20,12 +20,15 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error instanceof Error ? error.message : "An error occurred"}</div>;
-  // matchData와 그 안의 모든 속성(match, player1, player2)이 존재하는지 완벽하게 확인합니다.
+  
+  // 최종 수정: matchData와 그 안의 모든 속성(match, player1, player2)이
+  // 모두 완벽하게 존재하는지 이중으로 확인합니다.
   if (!matchData || !matchData.match || !matchData.player1 || !matchData.player2) {
     return null;
   }
 
-  const { match, player1, player2 }: MatchWithPlayers = matchData;
+  // 이제 이 아래에서는 matchData의 모든 속성이 안전하게 존재함을 보장합니다.
+  const { match, player1, player2 } = matchData;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
