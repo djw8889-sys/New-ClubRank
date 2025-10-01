@@ -88,7 +88,7 @@ export function useCreateClub() {
     });
 }
 
-// 클럽을 검색하는 훅 (<<--- 이 부분이 추가되었습니다!)
+// 클럽을 검색하는 훅
 export function useClubSearch(query: string) {
     return useQuery<Club[]>({
         queryKey: ['club-search', query],
@@ -103,7 +103,7 @@ export function useClubSearch(query: string) {
     });
 }
 
-// 클럽에 가입하는 뮤테이션 훅 (<<--- 이 부분이 추가되었습니다!)
+// 클럽에 가입하는 뮤테이션 훅
 export function useJoinClub() {
     const queryClient = useQueryClient();
     return useMutation<void, Error, number>({
@@ -123,5 +123,23 @@ export function useJoinClub() {
             queryClient.invalidateQueries({ queryKey: ['club-search'] });
         },
     });
+}
+
+// MainApp에서 사용하는 클럽 목록을 가져오는 훅 (<<--- 이 부분이 추가되었습니다!)
+export function useClubs() {
+  const { user } = useAuth();
+
+  // useQuery의 결과를 직접 반환하여 data, isLoading 등을 사용할 수 있도록 함
+  return useQuery<ClubMember[]>({
+    queryKey: ["my-club-memberships", user?.uid],
+    queryFn: async () => {
+      const res = await fetch("/api/clubs/my-memberships");
+      if (!res.ok) {
+        throw new Error("Failed to fetch club memberships");
+      }
+      return res.json();
+    },
+    enabled: !!user,
+  });
 }
 
