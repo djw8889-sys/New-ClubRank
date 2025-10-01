@@ -14,6 +14,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client/src"),
+      // Vercel이 @shared 경로를 인식할 수 있도록 별칭을 추가합니다.
+      "@shared": path.resolve(__dirname, "./shared"),
     },
   },
 })
