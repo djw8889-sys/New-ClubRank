@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useClubs } from "@/hooks/use-clubs";
-
 import { User, Club } from "@shared/schema";
-
 import { Toaster } from "@/components/ui/toaster";
 import BottomNavigation from "./BottomNavigation";
 import MyClubTabContent from "./MyClubTabContent";
 import SplashScreen from "./SplashScreen";
 import ProfileSetupScreen from "./ProfileSetupScreen";
+import LoginScreen from "./LoginScreen";
 import PostCreateModal from "./PostCreateModal";
 import UserProfileModal from "./UserProfileModal";
 import MatchRequestModal from "./MatchRequestModal";
@@ -24,11 +23,11 @@ import ShopModal from "./ShopModal";
 import FeedbackModal from "./FeedbackModal";
 
 export default function MainApp() {
-  const { user, profile, updateProfile, isProfileNew } = useAuth();
+  const { user, profile, updateProfile, isProfileNew, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("club");
-
   const { data: myClubMemberships, isLoading: clubsLoading } = useClubs();
 
+  // Modal states
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [matchRequestUser, setMatchRequestUser] = useState<User | null>(null);
@@ -43,7 +42,15 @@ export default function MainApp() {
   const [isShopModalOpen, setShopModalOpen] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  if (!user || !profile) {
+  if (loading) {
+    return <SplashScreen onComplete={() => {}} />;
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+  
+  if (!profile) {
     return <SplashScreen onComplete={() => {}} />;
   }
 
@@ -54,25 +61,28 @@ export default function MainApp() {
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <main className="flex-1 overflow-y-auto pb-16">
-        <MyClubTabContent
-          myClubMemberships={myClubMemberships}
-          isLoading={clubsLoading}
-          onManageClub={(club) => setSelectedClubForManagement(club)}
-        />
+        {/* Render content based on activeTab */}
+        {activeTab === 'club' && myClubMemberships && (
+            <MyClubTabContent
+                myClubMemberships={myClubMemberships}
+                isLoading={clubsLoading}
+                onManageClub={(club) => setSelectedClubForManagement(club)}
+            />
+        )}
       </main>
       
       {/* Modals */}
       <PostCreateModal
         isOpen={isPostModalOpen}
         onClose={() => setPostModalOpen(false)}
-        onPostCreated={() => setPostModalOpen(false)}
+        onPostCreated={() => {}}
       />
       {selectedUser && (
         <UserProfileModal
           user={selectedUser}
           isOpen={!!selectedUser}
           onClose={() => setSelectedUser(null)}
-          onMatchRequest={(targetUser) => setMatchRequestUser(targetUser)}
+          onMatchRequest={setMatchRequestUser}
         />
       )}
       {matchRequestUser && profile && (
@@ -81,7 +91,7 @@ export default function MainApp() {
           onClose={() => setMatchRequestUser(null)}
           onConfirm={() => {}}
           targetUser={matchRequestUser}
-          currentUserPoints={profile.elo ?? 1200}
+          currentUserPoints={profile.points ?? 0}
           isLoading={false}
         />
       )}
@@ -92,7 +102,7 @@ export default function MainApp() {
           matchId={matchResultId}
         />
       )}
-      {matchHistoryUserId && (
+       {matchHistoryUserId && (
         <MatchHistoryModal
           isOpen={!!matchHistoryUserId}
           onClose={() => setMatchHistoryUserId(null)}
@@ -115,7 +125,7 @@ export default function MainApp() {
         />
       )}
       {selectedClubForAnalytics && (
-        <ClubAnalyticsModal
+         <ClubAnalyticsModal
           isOpen={!!selectedClubForAnalytics}
           club={selectedClubForAnalytics}
           onClose={() => setSelectedClubForAnalytics(null)}
@@ -128,7 +138,7 @@ export default function MainApp() {
           onClose={() => setSelectedClubForBracket(null)}
         />
       )}
-      <PointChargeModal
+       <PointChargeModal
         isOpen={isPointChargeModalOpen}
         onClose={() => setPointChargeModalOpen(false)}
       />

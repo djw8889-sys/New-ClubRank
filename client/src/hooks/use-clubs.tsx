@@ -41,18 +41,27 @@ export function useClubMembers(clubId: number | null) {
 // Hook to create a new club
 export function useCreateClub() {
   const queryClient = useQueryClient();
-  return useMutation<Club, Error, NewClub>({
-    mutationFn: (newClub) =>
-      fetcher("/api/clubs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newClub),
-      }),
+  const { profile } = useAuth();
+  return useMutation<Club, Error, Omit<NewClub, 'ownerId' | 'createdAt'>>({
+    mutationFn: (newClubData) => {
+        if (!profile) throw new Error("You must be logged in to create a club.");
+        const newClub: NewClub = {
+            ...newClubData,
+            ownerId: profile.id,
+            createdAt: new Date(),
+        }
+        return fetcher("/api/clubs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newClub),
+        });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
   });
 }
+
 
 // Hook to join a club
 export function useJoinClub() {

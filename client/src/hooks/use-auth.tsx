@@ -10,7 +10,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { User } from "@shared/schema";
 
-interface AuthContextType {
+export interface AuthContextType {
   user: FirebaseUser | null;
   profile: User | null;
   loading: boolean;
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setProfile(userDoc.data() as User);
           setIsProfileNew(false);
         } else {
-          const newProfile: Omit<User, 'createdAt' | 'updatedAt'> = {
+          const newProfileData: Omit<User, 'createdAt' | 'updatedAt'> = {
             id: firebaseUser.uid,
             username: firebaseUser.displayName,
             email: firebaseUser.email,
@@ -48,9 +48,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             location: "",
             isAdmin: false,
             points: 0,
+            ntrp: null,
+            region: null,
+            wins: 0,
+            losses: 0,
           };
-          await setDoc(userDocRef, { ...newProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-          setProfile({ ...newProfile, createdAt: new Date(), updatedAt: new Date()});
+          await setDoc(userDocRef, { ...newProfileData, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+          const createdProfile = await getDoc(userDocRef);
+          setProfile(createdProfile.data() as User);
           setIsProfileNew(true);
         }
       } else {
@@ -80,7 +85,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing in with Google: ", error);
     }
   };
-
 
   const value = { user, profile, loading, isProfileNew, updateProfile, signInWithGoogle };
 

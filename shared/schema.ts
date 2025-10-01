@@ -7,8 +7,7 @@ import {
   text,
   boolean,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+import { createInsertSchema } from "drizzle-zod";
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey(),
@@ -22,6 +21,10 @@ export const users = pgTable("users", {
   location: varchar("location"),
   isAdmin: boolean("is_admin").default(false),
   points: integer("points").default(0),
+  ntrp: varchar("ntrp"),
+  region: varchar("region"),
+  wins: integer("wins").default(0),
+  losses: integer("losses").default(0),
 });
 
 export const clubs = pgTable("clubs", {
@@ -33,6 +36,8 @@ export const clubs = pgTable("clubs", {
   ownerId: varchar("owner_id")
     .references(() => users.id)
     .notNull(),
+  region: varchar("region"),
+  primaryColor: varchar("primary_color"),
 });
 
 export const clubMembers = pgTable("club_members", {
@@ -43,7 +48,7 @@ export const clubMembers = pgTable("club_members", {
   clubId: integer("club_id")
     .references(() => clubs.id)
     .notNull(),
-  role: varchar("role").default("member").notNull(), // e.g., 'admin', 'member'
+  role: varchar("role").default("member").notNull(), 
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
@@ -51,10 +56,10 @@ export const matches = pgTable("matches", {
   id: serial("id").primaryKey(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   clubId: integer("club_id").references(() => clubs.id),
-  player1Id: varchar("player1_id")
+  player1Id: varchar("player1_id") // Requester
     .references(() => users.id)
     .notNull(),
-  player2Id: varchar("player2_id")
+  player2Id: varchar("player2_id") // Target
     .references(() => users.id)
     .notNull(),
   result: varchar("result"), // 'player1_wins', 'player2_wins', 'draw'

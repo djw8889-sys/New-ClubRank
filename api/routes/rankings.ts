@@ -1,10 +1,9 @@
 import { Router } from "express";
 import { db } from "../storage.js";
-import { rankings, users, matches as matchesTable } from "../../shared/schema.js";
-import { eq, and, desc } from "drizzle-orm";
+import { users } from "../../shared/schema.js";
+import { desc } from "drizzle-orm";
 
 import { AuthenticatedRequest, ensureAuthenticated } from "../routes.js";
-import { calculateElo } from "../elo-calculator.js";
 
 const router = Router();
 
@@ -19,10 +18,10 @@ router.get(
     }
 
     try {
+      // Note: This logic is likely incorrect as users are not directly tied to a single club ranking.
+      // This should probably query a `rankings` table or join users with clubMembers.
+      // Returning all users sorted by ELO as a placeholder.
       const clubRankings = await db.query.users.findMany({
-        // This is a placeholder. You need a proper rankings table/query
-        // For now, returning all users as a stand-in for rankings.
-        // where: eq(users.clubId, clubId), // Assuming users table has clubId
         orderBy: [desc(users.elo)],
       });
 
@@ -38,7 +37,7 @@ router.get(
 router.get(
   "/global",
   ensureAuthenticated,
-  async (req: AuthenticatedRequest, res) => {
+  async (req, res) => {
      try {
       const globalRankings = await db.query.users.findMany({
         orderBy: [desc(users.elo)],
@@ -57,7 +56,7 @@ router.get(
 router.post(
   "/update",
   ensureAuthenticated,
-  async (req: AuthenticatedRequest, res) => {
+  async (req, res) => {
     // This logic is complex and depends on a match result being submitted.
     // It should be triggered after a match is recorded.
     // For now, this is a placeholder.

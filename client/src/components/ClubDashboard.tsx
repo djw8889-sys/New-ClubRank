@@ -1,8 +1,7 @@
-import { useState } from "react";
 import { useClubMembers, useLeaveClub } from "@/hooks/use-clubs";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Club, ClubMember, User } from "@shared/schema";
+import { Club } from "@shared/schema";
 // ... other imports
 
 interface ClubDashboardProps {
@@ -42,3 +41,4 @@ export default function ClubDashboard({ club, onClose }: ClubDashboardProps) {
         </div>
     );
 }
+

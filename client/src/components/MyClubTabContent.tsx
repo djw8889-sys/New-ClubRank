@@ -1,4 +1,4 @@
-import { Club, ClubMember } from "@shared/schema";
+import { Club } from "@shared/schema";
 import {
   Card,
   CardContent,
@@ -20,12 +20,12 @@ export default function MyClubTabContent({
   onManageClub,
 }: MyClubTabContentProps) {
   if (isLoading) {
-    return <div>Loading your clubs...</div>;
+    return <div className="p-4 text-center">Loading your clubs...</div>;
   }
 
   if (!myClubMemberships || myClubMemberships.length === 0) {
     return (
-      <Card>
+      <Card className="m-4">
         <CardHeader>
           <CardTitle>No Clubs Joined</CardTitle>
           <CardDescription>
@@ -38,15 +38,15 @@ export default function MyClubTabContent({
 
   return (
     <div className="p-4 space-y-4">
-      {myClubMemberships.map((m) => (
-        <Card key={m.club.id}>
+      {myClubMemberships.map(({ club, role }) => (
+        <Card key={club.id}>
           <CardHeader>
-            <CardTitle>{m.club.name}</CardTitle>
-            <CardDescription>{m.club.description}</CardDescription>
+            <CardTitle>{club.name}</CardTitle>
+            <CardDescription>{club.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Your role: {m.role}</p>
-            <Button onClick={() => onManageClub(m.club)}>Manage</Button>
+            <p>Your role: {role}</p>
+            <Button onClick={() => onManageClub(club)}>Manage</Button>
           </CardContent>
         </Card>
       ))}

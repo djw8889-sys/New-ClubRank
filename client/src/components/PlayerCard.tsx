@@ -36,7 +36,7 @@ export default function PlayerCard({
     >
       <CardContent className="p-4 flex items-center space-x-4">
         <img
-          src={getAvatarSrc(player.avatarUrl || '')}
+          src={getAvatarSrc({avatarUrl: player.avatarUrl, email: player.email})}
           alt={player.username || 'player'}
           className="w-16 h-16 rounded-full"
         />
