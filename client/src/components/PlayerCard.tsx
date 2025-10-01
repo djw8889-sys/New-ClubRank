@@ -1,64 +1,50 @@
-import { User } from "@shared/schema";
-import { getAvatarSrc } from "@/utils/avatar";
-import { getTierInfo } from "@/utils/tierCalculator";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { User } from '@shared/schema';
+import { Button } from '@/components/ui/button';
+import { getAvatarSrc } from '@/utils/avatar';
+import { calculateTier } from '@/utils/tierCalculator';
 
 interface PlayerCardProps {
-  player: User;
-  onMatchRequest: (player: User) => void;
-  onViewProfile: (player: User) => void;
+  user: User;
+  onMatchRequest: (user: User) => void;
 }
 
-const tierColors: { [key: string]: { color: string; bgColor: string } } = {
-    Bronze: { color: "text-yellow-800", bgColor: "bg-yellow-200" },
-    Silver: { color: "text-gray-600", bgColor: "bg-gray-300" },
-    Gold: { color: "text-yellow-600", bgColor: "bg-yellow-400" },
-    Platinum: { color: "text-teal-600", bgColor: "bg-teal-300" },
-    Diamond: { color: "text-blue-500", bgColor: "bg-blue-200" },
-    Master: { color: "text-purple-600", bgColor: "bg-purple-300" },
-    Grandmaster: { color: "text-red-700", bgColor: "bg-red-400" },
-    Challenger: { color: "text-indigo-800", bgColor: "bg-indigo-400" },
-};
-
-export default function PlayerCard({
-  player,
-  onMatchRequest,
-  onViewProfile,
-}: PlayerCardProps) {
-  const tierInfo = getTierInfo(player.elo ?? 1200);
-  const colors = tierColors[tierInfo.name] || tierColors.Bronze;
+export default function PlayerCard({ user, onMatchRequest }: PlayerCardProps) {
+  const tierInfo = calculateTier(user.points ?? 0);
 
   return (
-    <Card
-      className="w-full max-w-sm mx-auto cursor-pointer"
-      onClick={() => onViewProfile(player)}
-    >
-      <CardContent className="p-4 flex items-center space-x-4">
+    <div className="bg-background rounded-xl border border-border p-4 flex items-center justify-between">
+      <div className="flex items-center space-x-4">
         <img
-          src={getAvatarSrc(player.avatarUrl, { ...player, username: player.username || undefined, email: player.email || undefined })}
-          alt={player.username || 'player'}
-          className="w-16 h-16 rounded-full"
+          src={getAvatarSrc(user.avatarUrl, user)}
+          alt={user.username || 'User avatar'}
+          className="w-14 h-14 rounded-full"
         />
-        <div className="flex-1">
-          <h3 className="font-bold text-lg">{player.username}</h3>
-          <div className="flex items-center space-x-2">
-            <Badge className={`${colors.bgColor} ${colors.color}`}>
-              {tierInfo.name}
-            </Badge>
-            <span className="font-semibold">{player.elo ?? 1200} pts</span>
+        <div>
+          <h3 className="font-semibold text-foreground text-lg">{user.username}</h3>
+          <p className="text-sm text-muted-foreground">{user.wins}승 {user.losses}패</p>
+          <div className="flex items-center space-x-2 mt-1">
+            <i className={`fas fa-medal text-sm ${tierInfo.currentTier.color}`} />
+            <span className="text-xs font-medium text-muted-foreground">
+              {tierInfo.currentTier.name} - {user.points}P
+            </span>
           </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onMatchRequest(player);
-          }}
-          className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600"
+      </div>
+      <div className="text-right">
+        {tierInfo.nextTier && (
+          <p className="text-xs text-muted-foreground">
+            다음 등급까지 {tierInfo.nextTier.minPoints - (user.points ?? 0)}P
+          </p>
+        )}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mt-2"
+          onClick={() => onMatchRequest(user)}
         >
-          Match
-        </button>
-      </CardContent>
-    </Card>
+          대전 신청
+        </Button>
+      </div>
+    </div>
   );
 }
