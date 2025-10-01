@@ -33,3 +33,9 @@ export const getTierInfo = (points: number) => {
       : 100,
   };
 };
+
+// AdminPanel에서 사용하는 동일한 함수를 다른 이름으로 export (<<--- 이 부분이 추가되었습니다!)
+export const calculateTier = (points: number) => {
+  return getTierInfo(points);
+};
+
