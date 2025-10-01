@@ -32,13 +32,13 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
         </DialogHeader>
         <div className="mt-4 flex justify-around items-center">
           <div className="text-center">
-            <img src={getAvatarSrc({ avatarUrl: player1.avatarUrl, email: player1.email })} alt={player1.username || ''} className="w-20 h-20 rounded-full mx-auto" />
+            <img src={getAvatarSrc(player1.avatarUrl, { email: player1.email })} alt={player1.username || ''} className="w-20 h-20 rounded-full mx-auto" />
             <p className="font-bold mt-2">{player1.username}</p>
             <p>{match.result === 'player1_wins' ? 'Winner' : ''}</p>
           </div>
           <div className="text-xl font-bold">VS</div>
           <div className="text-center">
-            <img src={getAvatarSrc({ avatarUrl: player2.avatarUrl, email: player2.email })} alt={player2.username || ''} className="w-20 h-20 rounded-full mx-auto" />
+            <img src={getAvatarSrc(player2.avatarUrl, { email: player2.email })} alt={player2.username || ''} className="w-20 h-20 rounded-full mx-auto" />
             <p className="font-bold mt-2">{player2.username}</p>
             <p>{match.result === 'player2_wins' ? 'Winner' : ''}</p>
           </div>

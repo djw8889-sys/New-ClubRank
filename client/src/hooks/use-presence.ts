@@ -15,7 +15,7 @@ export const usePresence = () => {
 
     onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
-        const con = set(myConnectionsRef, true);
+        set(myConnectionsRef, true);
         onDisconnect(myConnectionsRef).remove();
         onDisconnect(lastOnlineRef).set(serverTimestamp());
       }

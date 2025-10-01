@@ -8,10 +8,15 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+interface ClubMembership {
+  club: Club;
+  role: string;
+}
+
 interface MyClubTabContentProps {
-  myClubMemberships: { club: Club; role: string }[] | undefined;
+  myClubMemberships: ClubMembership[] | undefined;
   isLoading: boolean;
-  onManageClub: (club: Club) => void;
+  onManageClub: (membership: ClubMembership) => void;
 }
 
 export default function MyClubTabContent({
@@ -38,19 +43,18 @@ export default function MyClubTabContent({
 
   return (
     <div className="p-4 space-y-4">
-      {myClubMemberships.map(({ club, role }) => (
-        <Card key={club.id}>
+      {myClubMemberships.map((membership) => (
+        <Card key={membership.club.id}>
           <CardHeader>
-            <CardTitle>{club.name}</CardTitle>
-            <CardDescription>{club.description}</CardDescription>
+            <CardTitle>{membership.club.name}</CardTitle>
+            <CardDescription>{membership.club.description}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Your role: {role}</p>
-            <Button onClick={() => onManageClub(club)}>Manage</Button>
+            <p>Your role: {membership.role}</p>
+            <Button onClick={() => onManageClub(membership)}>Manage</Button>
           </CardContent>
         </Card>
       ))}
     </div>
   );
 }
-

@@ -1,6 +1,5 @@
 import { User } from '@shared/schema';
 import { getTierProgress, TierInfo } from '@/utils/tierCalculator';
-import React from 'react';
 
 interface TierProgressCardProps {
   user: User;

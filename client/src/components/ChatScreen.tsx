@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useChat } from '@/hooks/use-chat';
+import { useChatMessages, useChat } from '@/hooks/use-chat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAvatarSrc } from '@/utils/avatar';
-// Message 타입을 useChat 훅의 반환 타입에서 추론합니다.
-type Message = ReturnType<typeof useChat>['messages'][0];
+import { Message } from '@shared/schema';
 
 interface ChatScreenProps {
   chatId: string;
@@ -13,7 +12,8 @@ interface ChatScreenProps {
 
 export default function ChatScreen({ chatId }: ChatScreenProps) {
   const { user } = useAuth();
-  const { messages, loading, sendMessage } = useChat(chatId);
+  const { messages, loading } = useChatMessages(chatId);
+  const { sendMessage } = useChat();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

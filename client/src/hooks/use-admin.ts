@@ -13,15 +13,11 @@ export const useUpdateUserRole = () => {
       await updateDoc(userRef, { isAdmin });
     },
     onSuccess: () => {
-      toast({ title: '사용자 역할이 업데이트되었습니다.' });
+      toast({ title: 'User role updated successfully' });
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error) => {
-      toast({
-        title: '오류가 발생했습니다.',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error updating user role', description: error.message, variant: 'destructive' });
     },
   });
 };
