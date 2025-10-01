@@ -22,7 +22,7 @@ import PointChargeModal from "./PointChargeModal";
 import ShopModal from "./ShopModal";
 import FeedbackModal from "./FeedbackModal";
 
-// useClubs의 반환 데이터 타입에서 ClubMembership 타입을 추론합니다.
+// useClubs 훅의 반환 타입에서 ClubMembership 타입을 정확히 추론합니다.
 type ClubMembership = NonNullable<ReturnType<typeof useClubs>['data']>[0];
 
 export default function MainApp() {
@@ -91,11 +91,11 @@ export default function MainApp() {
           isLoading={false}
         />
       )}
-      {matchResultId && profile && (
+      {matchResultId && (
         <MatchResultModal
           isOpen={!!matchResultId}
           onClose={() => setMatchResultId(null)}
-          matchId={matchResultId} // currentUser prop 제거
+          matchId={matchResultId}
         />
       )}
        {matchHistoryUserId && (

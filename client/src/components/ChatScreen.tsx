@@ -4,7 +4,8 @@ import { useChat } from '@/hooks/use-chat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAvatarSrc } from '@/utils/avatar';
-import { Message } from '@shared/schema'; // 실제 Message 타입을 schema에서 가져옵니다.
+// Message 타입을 useChat 훅의 반환 타입에서 추론합니다.
+type Message = ReturnType<typeof useChat>['messages'][0];
 
 interface ChatScreenProps {
   chatId: string;
