@@ -14,7 +14,12 @@ export function registerRankingRoutes(app: any) {
     ensureAuthenticated,
     async (req: AuthenticatedRequest, res: Response) => {
       try {
-        const { clubId } = req.params;
+        // clubId를 문자열에서 숫자로 변환
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
+          return res.status(400).json({ message: "Invalid Club ID" });
+        }
+
         const clubMembers = await db
           .select({
             id: users.id,
@@ -43,8 +48,12 @@ export function registerRankingRoutes(app: any) {
     ensureAuthenticated,
     async (req: AuthenticatedRequest, res: Response) => {
       try {
-        const { clubId } = req.params;
-        // Drizzle-ORM 쿼리 구문 수정
+        // clubId를 문자열에서 숫자로 변환
+        const clubId = parseInt(req.params.clubId, 10);
+        if (isNaN(clubId)) {
+          return res.status(400).json({ message: "Invalid Club ID" });
+        }
+
         const matchHistory = await db.query.matches.findMany({
           where: (matchesTable, { eq }) => eq(matchesTable.clubId, clubId),
           orderBy: (matchesTable, { desc }) => [desc(matchesTable.createdAt)],
@@ -74,7 +83,6 @@ export function registerRankingRoutes(app: any) {
           return res.status(403).json({ message: "Unauthorized" });
         }
         
-        // Drizzle-ORM 쿼리 구문 수정
         const [ranking1, ranking2] = await Promise.all([
           db.query.rankings.findFirst({
             where: (rankingsTable, { and, eq }) => and(eq(rankingsTable.userId, player1Id), eq(rankingsTable.clubId, clubId)),

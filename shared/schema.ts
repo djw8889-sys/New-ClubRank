@@ -8,8 +8,7 @@ import {
   primaryKey,
   boolean,
 } from "drizzle-orm/pg-core";
-import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { z } from "zod";
+import { createInsertSchema } from "drizzle-zod";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -83,3 +82,4 @@ export const matches = pgTable("matches", {
 });
 
 export type Match = typeof matches.$inferSelect;
+

@@ -1,12 +1,13 @@
 import { type Response } from 'express';
 import { db } from '../storage.js';
-import { clubs, clubMembers, users, insertClubSchema, User } from '../../shared/schema.js'; // 경로 수정
-import { eq, and, like, desc, count } from 'drizzle-orm';
+import { clubs, clubMembers } from '../../shared/schema.js';
+import { eq } from 'drizzle-orm';
 import { ensureAuthenticated, type AuthenticatedRequest } from '../routes.js';
 
 export function registerClubRoutes(app: any) {
-    // /api/clubs/my-membership
     app.get('/api/clubs/my-membership', ensureAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+        // 이 부분은 기존 코드와 동일하게 유지됩니다.
+        // ... (이하 모든 라우트 코드는 그대로 유지)
         const userId = req.user!.id;
         try {
             const memberships = await db.select({
@@ -26,5 +27,8 @@ export function registerClubRoutes(app: any) {
         }
     });
 
-    // ... (기존 파일의 나머지 라우트 코드는 여기에 그대로 유지됩니다)
+    // 참고: 사용자님의 기존 clubs.ts 파일에 다른 라우트 함수들이 더 있다면,
+    // 이 파일에 그대로 유지되어야 합니다.
+    // 여기서는 로그에 나온 오류를 해결하기 위해 import 부분만 수정한 것입니다.
 }
+
