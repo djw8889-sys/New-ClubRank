@@ -19,7 +19,7 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
   const { data: matchData, isLoading, error } = useMatchById(matchId);
 
   if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  if (error) return <div>Error: {error instanceof Error ? error.message : "An error occurred"}</div>;
   if (!matchData) return null;
 
   const { match, player1, player2 }: MatchWithPlayers = matchData;

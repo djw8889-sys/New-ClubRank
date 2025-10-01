@@ -20,7 +20,7 @@ export default function AdminPromotion({ userId }: AdminPromotionProps) {
 
   return (
     <Button onClick={handlePromote} disabled={updateUserRoleMutation.isPending}>
-      관리자로 승격
+      {updateUserRoleMutation.isPending ? '승격 중...' : '관리자로 승격'}
     </Button>
   );
 }

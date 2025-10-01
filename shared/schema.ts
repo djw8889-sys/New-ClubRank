@@ -7,7 +7,6 @@ import {
   text,
   boolean,
   date,
-  primaryKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
@@ -98,3 +97,24 @@ export type Post = typeof posts.$inferSelect;
 export type NewPost = typeof posts.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+
+// Chat related types
+export interface ChatRoom {
+  id: string;
+  participants: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  lastMessage?: string;
+  lastMessageAt?: Date;
+}
+
+export interface Message {
+  id: string;
+  chatRoomId: string;
+  senderId: string;
+  content: string;
+  createdAt: Date;
+}
+
+export type InsertMessage = Omit<Message, 'id' | 'createdAt'>;
+export type InsertChatRoom = Omit<ChatRoom, 'id' | 'createdAt' | 'updatedAt'>;

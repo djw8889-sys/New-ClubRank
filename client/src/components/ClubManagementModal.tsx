@@ -83,10 +83,11 @@ export default function ClubManagementModal({ isOpen, onClose, membership }: Clu
     },
   });
 
-  const onSubmitSettings = async (data: ClubSettingsFormData) => {
+  const onSubmitSettings = async (formData: ClubSettingsFormData) => {
     try {
       setIsUpdating(true);
       
+      console.log("Updating club settings:", formData);
       // TODO: API 연동 구현
       await new Promise(resolve => setTimeout(resolve, 1000)); // 임시 지연
       

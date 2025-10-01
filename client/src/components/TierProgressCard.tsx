@@ -1,12 +1,29 @@
 import { User } from '@shared/schema';
-import { getTierProgress } from '@/utils/tierCalculator';
+import { getTierProgress, TierInfo } from '@/utils/tierCalculator';
+import React from 'react';
 
 interface TierProgressCardProps {
   user: User;
 }
 
+// TierInfo 타입에 color와 bgColor 추가
+interface DisplayTierInfo extends TierInfo {
+    color: string;
+    bgColor: string;
+}
+
+// getTierProgress의 반환값 타입 정의
+interface TierProgress {
+    currentTier: DisplayTierInfo;
+    nextTier: DisplayTierInfo | null;
+    progress: number;
+    requirements: string[];
+}
+
+
 export default function TierProgressCard({ user }: TierProgressCardProps) {
-  const { currentTier, nextTier, progress, requirements } = getTierProgress(user.points, user.wins, user.losses);
+  // getTierProgress 호출을 user.points만 받도록 수정 (wins, losses 제거)
+  const { currentTier, nextTier, progress, requirements }: TierProgress = getTierProgress(user.points ?? 0);
 
   return (
     <div className="bg-background rounded-xl border border-border p-4 space-y-3" data-testid="card-tier-progress">
@@ -34,7 +51,7 @@ export default function TierProgressCard({ user }: TierProgressCardProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-foreground">
-              다음 등급: <span className={currentTier.color}>{nextTier.name}</span>
+              다음 등급: <span className={nextTier.color}>{nextTier.name}</span>
             </span>
             <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
           </div>
@@ -52,7 +69,7 @@ export default function TierProgressCard({ user }: TierProgressCardProps) {
           {requirements.length > 0 && (
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">승급 조건:</p>
-              {requirements.map((requirement, index) => (
+              {requirements.map((requirement: string, index: number) => (
                 <div key={index} className="flex items-center space-x-2">
                   <i className="fas fa-circle text-xs text-muted-foreground" />
                   <span className="text-xs text-muted-foreground" data-testid={`requirement-${index}`}>

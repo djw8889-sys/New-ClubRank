@@ -5,12 +5,10 @@ import {
   addDoc, 
   query, 
   where, 
-  orderBy, 
   onSnapshot, 
   serverTimestamp,
   getDocs,
   updateDoc,
-  Timestamp
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from './use-auth';
@@ -135,7 +133,8 @@ export function useChatMessages(chatRoomId: string | null) {
     
     const messagesQuery = query(
       collection(db, 'messages'),
-      where('chatRoomId', '==', chatRoomId)
+      where('chatRoomId', '==', chatRoomId),
+      orderBy('createdAt', 'asc') // orderBy 추가
     );
 
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
@@ -145,14 +144,7 @@ export function useChatMessages(chatRoomId: string | null) {
         createdAt: doc.data().createdAt?.toDate() || new Date(),
       } as Message));
       
-      // Sort on client side to avoid composite index requirement
-      const sortedMessages = messageList.sort((a, b) => {
-        const timeA = a.createdAt ? a.createdAt.getTime() : 0;
-        const timeB = b.createdAt ? b.createdAt.getTime() : 0;
-        return timeA - timeB; // Ascending order
-      });
-      
-      setMessages(sortedMessages);
+      setMessages(messageList);
       setLoading(false);
     });
 

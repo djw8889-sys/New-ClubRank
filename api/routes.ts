@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, Application } from 'express';
 import { User } from '../shared/schema';
 
 // AuthenticatedRequest 타입을 명확히 정의
@@ -16,7 +16,7 @@ export function ensureAuthenticated(req: Request, res: Response, next: NextFunct
 
 const router = Router();
 
-// 예시 라우트 (오류가 발생한 구조를 기반으로 수정)
+// 예시 라우트
 router.post('/some-route', ensureAuthenticated, async (req: Request, res: Response) => {
   const authenticatedReq = req as AuthenticatedRequest;
   // req.body를 사용하기 위해 express.json() 미들웨어가 설정되어 있어야 합니다.
@@ -39,5 +39,7 @@ router.put('/another-route', ensureAuthenticated, async (req: Request, res: Resp
     res.json({ message: 'Updated' });
 });
 
-// 이 파일이 모듈임을 나타내기 위해 export 추가
-export default router;
+// Express 앱에 라우터를 등록하는 함수
+export function registerRoutes(app: Application) {
+  app.use('/api', router);
+}

@@ -10,7 +10,7 @@ interface ProfileSetupScreenProps {
 }
 
 export default function ProfileSetupScreen({ onComplete }: ProfileSetupScreenProps) {
-  const { profile, updateProfile } = useAuth();
+  const { profile } = useAuth();
   const [username, setUsername] = useState(profile?.username || "");
   const [bio, setBio] = useState(profile?.bio || "");
 

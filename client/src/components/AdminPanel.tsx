@@ -1,29 +1,17 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { User, Club, Match, Post } from "@shared/schema";
+import { User } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function AdminPanel() {
   const { profile } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
-  const [clubs, setClubs] = useState<Club[]>([]);
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       const usersSnapshot = await getDocs(collection(db, "users"));
-      setUsers(usersSnapshot.docs.map(doc => ({ ...doc.data() })) as User[]);
-      
-      const clubsSnapshot = await getDocs(collection(db, "clubs"));
-      setClubs(clubsSnapshot.docs.map(doc => ({ ...doc.data() })) as Club[]);
-
-      const matchesSnapshot = await getDocs(collection(db, "matches"));
-      setMatches(matchesSnapshot.docs.map(doc => ({ ...doc.data() })) as Match[]);
-
-      const postsSnapshot = await getDocs(collection(db, "posts"));
-      setPosts(postsSnapshot.docs.map(doc => ({ ...doc.data() })) as Post[]);
+      setUsers(usersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[]);
     };
     if (profile?.isAdmin) {
       fetchData();
@@ -31,9 +19,14 @@ export default function AdminPanel() {
   }, [profile]);
 
   const handleDelete = async (collectionName: string, id: string) => {
-    await deleteDoc(doc(db, collectionName, id));
-    alert(`${collectionName.slice(0, -1)} with id ${id} deleted`);
-    // NOTE: This won't refresh the list automatically. A state management library would be better.
+    if(window.confirm(`${collectionName}에서 ID: ${id} 항목을 정말 삭제하시겠습니까?`)){
+      await deleteDoc(doc(db, collectionName, id));
+      alert(`${collectionName.slice(0, -1)} with id ${id} deleted`);
+      // UI 갱신
+      if (collectionName === 'users') {
+        setUsers(users.filter(user => user.id !== id));
+      }
+    }
   };
 
   if (!profile?.isAdmin) {
@@ -49,6 +42,7 @@ export default function AdminPanel() {
           <table className="min-w-full bg-white border">
             <thead>
               <tr>
+                <th className="py-2 px-4 border-b">ID</th>
                 <th className="py-2 px-4 border-b">Username</th>
                 <th className="py-2 px-4 border-b">Email</th>
                 <th className="py-2 px-4 border-b">ELO</th>
@@ -58,6 +52,7 @@ export default function AdminPanel() {
             <tbody>
               {users.map(user => (
                 <tr key={user.id}>
+                  <td className="border px-4 py-2">{user.id}</td>
                   <td className="border px-4 py-2">{user.username}</td>
                   <td className="border px-4 py-2">{user.email}</td>
                   <td className="border px-4 py-2">{user.elo}</td>
