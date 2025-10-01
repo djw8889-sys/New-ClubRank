@@ -99,16 +99,21 @@ export default function MainApp() {
           isLoading={false}
         />
       )}
-      {matchResultId && user && (
+      {matchResultId && user && profile && (
         <MatchResultModal
           isOpen={!!matchResultId}
           onClose={() => setMatchResultId(null)}
           match={{
             id: matchResultId,
-            requesterId: user.uid,
-            targetId: "",
-            status: "completed",
             createdAt: new Date(),
+            location: null,
+            clubId: null,
+            player1Id: user.uid,
+            player2Id: "",
+            result: null,
+            eloChange: null,
+            status: "completed",
+            scheduledAt: null,
           }}
           currentUser={profile}
           opponent={null}
@@ -128,12 +133,24 @@ export default function MainApp() {
         isOpen={isClubSearchModalOpen}
         onClose={() => setClubSearchModalOpen(false)}
       />
-      {selectedClubForManagement && (
+      {selectedClubForManagement && user && (
         <ClubManagementModal
           isOpen={!!selectedClubForManagement}
           membership={{
-            club: selectedClubForManagement,
-            membership: { role: "owner" },
+            club: {
+                ...selectedClubForManagement,
+                bannerUrl: selectedClubForManagement.bannerUrl ?? null,
+                rankingPoints: selectedClubForManagement.rankingPoints ?? null,
+                establishedAt: selectedClubForManagement.establishedAt ?? new Date(),
+            },
+            membership: {
+              id: 0, // Placeholder
+              userId: user.uid,
+              clubId: selectedClubForManagement.id,
+              role: "owner",
+              joinedAt: new Date(),
+              isActive: true,
+            },
           }}
           onClose={() => setSelectedClubForManagement(null)}
         />
