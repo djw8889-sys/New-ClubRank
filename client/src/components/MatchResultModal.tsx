@@ -20,7 +20,10 @@ export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResu
 
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error instanceof Error ? error.message : "An error occurred"}</div>;
-  if (!matchData) return null;
+  // matchData와 그 안의 모든 속성(match, player1, player2)이 존재하는지 완벽하게 확인합니다.
+  if (!matchData || !matchData.match || !matchData.player1 || !matchData.player2) {
+    return null;
+  }
 
   const { match, player1, player2 }: MatchWithPlayers = matchData;
 
