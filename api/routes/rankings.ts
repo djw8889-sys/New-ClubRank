@@ -1,20 +1,20 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import { ensureAuthenticated } from "../middleware/auth";
+import { AuthenticatedRequest } from "../types"; // FIX: 정의된 타입 import
 
 const router = Router();
 
 // GET /api/rankings
-router.get("/", ensureAuthenticated, async (req: Request, res: Response) => {
+router.get("/", ensureAuthenticated, async (req: AuthenticatedRequest, res: Response) => { // FIX: AuthenticatedRequest 타입 사용
   try {
-    // FIX: req.user가 존재하는지 확인하여 TypeScript 오류 해결
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication error: User not found." });
-    }
+    // 이제 req.user는 타입 오류 없이 안전하게 접근 가능합니다.
     console.log(`User ${req.user.uid} is fetching rankings.`);
 
-    // ... DB에서 랭킹 정보 조회 로직 ...
+    // ... 실제 DB에서 랭킹 정보 조회 로직 ...
+
     res.status(200).json({ rankings: [{ userId: 'p1', rank: 1, score: 1500 }] });
   } catch (error) {
+    console.error("Failed to fetch rankings:", error);
     res.status(500).json({ error: "Failed to fetch rankings" });
   }
 });
