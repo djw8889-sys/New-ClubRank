@@ -1,10 +1,15 @@
 import express from 'express';
-import { registerRoutes } from './routes.js'; // default import -> named import로 수정
+import mainRouter from './routes'; // FIX: default export로 가져오기
+import clubsRouter from './routes/clubs';
+import rankingsRouter from './routes/rankings';
 
 const app = express();
 
-// registerRoutes 함수를 호출하여 라우트를 등록합니다.
-registerRoutes(app);
+app.use(express.json());
 
-// Vercel에서 서버리스 함수로 처리할 수 있도록 app을 export 합니다.
+// FIX: 가져온 라우터를 미들웨어로 등록
+app.use('/api', mainRouter);
+app.use('/api/clubs', clubsRouter);
+app.use('/api/rankings', rankingsRouter);
+
 export default app;

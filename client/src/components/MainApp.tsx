@@ -1,144 +1,129 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
-import { useClubs } from "@/hooks/use-clubs";
-import { User, Club } from "@shared/schema";
-import { Toaster } from "@/components/ui/toaster";
-import BottomNavigation from "./BottomNavigation";
-import MyClubTabContent from "./MyClubTabContent";
-import SplashScreen from "./SplashScreen";
-import ProfileSetupScreen from "./ProfileSetupScreen";
-import LoginScreen from "./LoginScreen";
-import PostCreateModal from "./PostCreateModal";
-import UserProfileModal from "./UserProfileModal";
-import MatchRequestModal from "./MatchRequestModal";
-import MatchResultModal from "./MatchResultModal";
-import MatchHistoryModal from "./MatchHistoryModal";
-import ClubCreationModal from "./ClubCreationModal";
-import ClubSearchModal from "./ClubSearchModal";
-import ClubManagementModal from "./ClubManagementModal";
-import ClubAnalyticsModal from "./ClubAnalyticsModal";
-import BracketGeneratorModal from "./BracketGeneratorModal";
-import PointChargeModal from "./PointChargeModal";
-import ShopModal from "./ShopModal";
-import FeedbackModal from "./FeedbackModal";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+} from "@nextui-org/react";
 
-// useClubs 훅의 반환 타입에서 ClubMembership 타입을 정확히 추론합니다.
-type ClubMembership = NonNullable<ReturnType<typeof useClubs>['data']>[0];
+// --- 타입 정의 ---
+// 두 컴포넌트에서 공통으로 사용할 타입들을 파일 상단에 정의합니다.
+interface Player {
+  id: string;
+  name: string;
+}
 
-export default function MainApp() {
-  const { user, profile, isProfileNew, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState("club");
-  const { data: myClubMemberships, isLoading: clubsLoading } = useClubs();
+interface MatchWithPlayers {
+  id: number;
+  date: string;
+  location: string;
+  winnerTeam: "A" | "B";
+  teamAScore: number;
+  teamBScore: number;
+  teamAPlayers: Player[];
+  teamBPlayers: Player[];
+}
 
-  const [isPostModalOpen, setPostModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [matchRequestUser, setMatchRequestUser] = useState<User | null>(null);
-  const [matchResultId, setMatchResultId] = useState<number | null>(null);
-  const [matchHistoryUserId, setMatchHistoryUserId] = useState<string | null>(null);
-  const [isClubCreationModalOpen, setClubCreationModalOpen] = useState(false);
-  const [isClubSearchModalOpen, setClubSearchModalOpen] = useState(false);
-  const [selectedClubForManagement, setSelectedClubForManagement] = useState<ClubMembership | null>(null);
-  const [selectedClubForAnalytics, setSelectedClubForAnalytics] = useState<Club | null>(null);
-  const [selectedClubForBracket, setSelectedClubForBracket] = useState<Club | null>(null);
-  const [isPointChargeModalOpen, setPointChargeModalOpen] = useState(false);
-  const [isShopModalOpen, setShopModalOpen] = useState(false);
-  const [isFeedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
-  if (loading) {
-    return <SplashScreen onComplete={() => {}} />;
-  }
+// --- MatchResultModal 컴포넌트 ---
+// MainApp 컴포넌트 안에서만 사용되므로, 같은 파일에 정의합니다.
+interface MatchResultModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  selectedMatch: MatchWithPlayers | null;
+}
 
-  if (!user) {
-    return <LoginScreen />;
-  }
-  
-  if (!profile) {
-    return <SplashScreen onComplete={() => {}} />;
-  }
+const MatchResultModal = ({
+  isOpen,
+  onClose,
+  selectedMatch,
+}: MatchResultModalProps) => {
+  if (!selectedMatch) return null;
 
-  if (isProfileNew) {
-    return <ProfileSetupScreen onComplete={() => {}} />;
-  }
+  const winnerTeamName = selectedMatch.winnerTeam === "A" ? "A팀" : "B팀";
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <main className="flex-1 overflow-y-auto pb-16">
-        {activeTab === 'club' && myClubMemberships && (
-            <MyClubTabContent
-                myClubMemberships={myClubMemberships}
-                isLoading={clubsLoading}
-                onManageClub={setSelectedClubForManagement}
-            />
-        )}
-      </main>
-      
-      <PostCreateModal isOpen={isPostModalOpen} onClose={() => setPostModalOpen(false)} onPostCreated={() => {}} />
-      {selectedUser && (
-        <UserProfileModal
-          userId={selectedUser.id}
-          isOpen={!!selectedUser}
-          onClose={() => setSelectedUser(null)}
-          onStartChat={() => {}}
-        />
-      )}
-      {matchRequestUser && profile && (
-        <MatchRequestModal
-          isOpen={!!matchRequestUser}
-          onClose={() => setMatchRequestUser(null)}
-          onConfirm={() => {}}
-          targetUser={matchRequestUser}
-          currentUserPoints={profile.points ?? 0}
-          isLoading={false}
-        />
-      )}
-      {matchResultId && (
-        <MatchResultModal
-          isOpen={!!matchResultId}
-          onClose={() => setMatchResultId(null)}
-          matchId={matchResultId}
-        />
-      )}
-       {matchHistoryUserId && (
-        <MatchHistoryModal
-          isOpen={!!matchHistoryUserId}
-          onClose={() => setMatchHistoryUserId(null)}
-          userId={matchHistoryUserId}
-        />
-      )}
-      <ClubCreationModal isOpen={isClubCreationModalOpen} onClose={() => setClubCreationModalOpen(false)} />
-      <ClubSearchModal isOpen={isClubSearchModalOpen} onClose={() => setClubSearchModalOpen(false)} />
-      {selectedClubForManagement && (
-        <ClubManagementModal
-          isOpen={!!selectedClubForManagement}
-          membership={{
-            ...selectedClubForManagement,
-            role: selectedClubForManagement.role as 'owner' | 'admin' | 'member'
-          }}
-          onClose={() => setSelectedClubForManagement(null)}
-        />
-      )}
-      {selectedClubForAnalytics && (
-         <ClubAnalyticsModal
-          isOpen={!!selectedClubForAnalytics}
-          clubName={selectedClubForAnalytics.name}
-          onClose={() => setSelectedClubForAnalytics(null)}
-        />
-      )}
-      {selectedClubForBracket && (
-        <BracketGeneratorModal
-          isOpen={!!selectedClubForBracket}
-          members={[]}
-          onClose={() => setSelectedClubForBracket(null)}
-        />
-      )}
-       <PointChargeModal isOpen={isPointChargeModalOpen} onClose={() => setPointChargeModalOpen(false)} />
-      <ShopModal isOpen={isShopModalOpen} onClose={() => setShopModalOpen(false)} />
-      <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setFeedbackModalOpen(false)} />
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalContent>
+        <>
+          <ModalHeader className="flex flex-col gap-1">경기 결과</ModalHeader>
+          <ModalBody>
+            <div>
+              <h3 className="font-bold">경기 정보</h3>
+              <p>날짜: {new Date(selectedMatch.date).toLocaleDateString()}</p>
+              <p>장소: {selectedMatch.location}</p>
+            </div>
+            <div className="mt-4">
+              <h3 className="font-bold">승리 팀: {winnerTeamName}</h3>
+              <p>스코어: {selectedMatch.teamAScore} : {selectedMatch.teamBScore}</p>
+            </div>
+            <div className="mt-4">
+              <h3 className="font-bold">참가 선수</h3>
+              <div>
+                <strong>A팀:</strong>
+                <p>{selectedMatch.teamAPlayers.map((p) => p.name).join(", ")}</p>
+              </div>
+              <div className="mt-2">
+                <strong>B팀:</strong>
+                <p>{selectedMatch.teamBPlayers.map((p) => p.name).join(", ")}</p>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="danger" variant="light" onPress={onClose}>닫기</Button>
+          </ModalFooter>
+        </>
+      </ModalContent>
+    </Modal>
+  );
+};
 
-      <footer className="fixed bottom-0 left-0 right-0">
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </footer>
-      <Toaster />
+
+// --- MainApp 컴포넌트 ---
+const MainApp = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<MatchWithPlayers | null>(null);
+
+  const matches: MatchWithPlayers[] = [
+    { id: 1, date: '2025-10-02', location: '화성시', winnerTeam: 'A', teamAScore: 21, teamBScore: 15, teamAPlayers: [{id: 'p1', name: '김선수'}], teamBPlayers: [{id: 'p2', name: '이선수'}] },
+    { id: 2, date: '2025-10-03', location: '수원시', winnerTeam: 'B', teamAScore: 18, teamBScore: 21, teamAPlayers: [{id: 'p3', name: '박선수'}], teamBPlayers: [{id: 'p4', name: '최선수'}] }
+  ];
+
+  const handleOpenModal = (matchId: number) => {
+    const matchToShow = matches.find(match => match.id === matchId);
+    if (matchToShow) {
+      setSelectedMatch(matchToShow);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedMatch(null);
+  };
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold mb-4">경기 목록</h1>
+      <ul>
+        {matches.map(match => (
+          <li key={match.id} onClick={() => handleOpenModal(match.id)} className="cursor-pointer border rounded-lg p-4 mb-2 hover:bg-gray-100 transition-colors">
+            <p className="font-semibold">{match.location} 코트</p>
+            <p className="text-sm text-gray-600">{new Date(match.date).toLocaleDateString()}</p>
+          </li>
+        ))}
+      </ul>
+
+      <MatchResultModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        selectedMatch={selectedMatch}
+      />
     </div>
   );
-}
+};
+
+export default MainApp;
+
