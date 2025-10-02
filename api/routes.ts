@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
-import db from '../api/firebase-admin'; // 경로 및 import 방식 확인
-import authenticate from '../api/middleware/auth'; // 경로 및 import 방식 확인
+import db from '../api/firebase-admin'; // 경로가 올바른지 확인해주세요.
+import authenticate from '../api/middleware/auth'; // 경로가 올바른지 확인해주세요.
 
 const router = Router();
 
 // 예시: 내 클럽 정보 가져오기
 router.get('/my-clubs', authenticate, async (req: Request, res: Response) => {
   try {
+    // 전역 타입으로 req.user를 사용하므로, 존재 여부를 확인합니다.
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required.' });
     }
@@ -31,7 +32,7 @@ router.post('/create-club', authenticate, async (req: Request, res: Response) =>
         if(!req.user) {
             return res.status(401).json({ error: 'Authentication required.' });
         }
-        // req.body를 직접 사용
+        // req.body에서 직접 clubName과 location을 가져옵니다.
         const { clubName, location } = req.body;
         const userId = req.user.uid;
 
