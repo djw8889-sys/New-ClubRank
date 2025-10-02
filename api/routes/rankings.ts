@@ -1,18 +1,17 @@
-import { Router, Response } from "express";
-import { ensureAuthenticated } from "../middleware/auth"; // FIX: 올바른 경로에서 import
-import { AuthenticatedRequest } from "../types"; // FIX: 올바른 경로에서 import
+import { Router, Request, Response } from "express"; // FIX: Request import
+import { ensureAuthenticated } from "../middleware/auth";
 
 const router = Router();
 
 // GET /api/rankings
-router.get("/", ensureAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+router.get("/", ensureAuthenticated, async (req: Request, res: Response) => { // FIX: 기본 Request 타입 사용
   try {
     console.log(`User ${req.user.uid} is fetching rankings.`);
-    // ... DB에서 랭킹 정보 조회 로직 ...
     res.status(200).json({ rankings: [{ userId: 'p1', rank: 1, score: 1500 }] });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch rankings" });
   }
 });
 
-export default router; // FIX: default export 추가
+export default router;
+
