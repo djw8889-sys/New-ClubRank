@@ -1,51 +1,88 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useMatchById } from "@/hooks/use-matches";
-import { getAvatarSrc } from "@/utils/avatar";
-import { Match, User } from "@shared/schema";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+} from "@nextui-org/react";
 
-// MatchWithPlayers 인터페이스는 타입 추론에 혼란을 줄 수 있으므로 사용하지 않습니다.
+// MatchWithPlayers 타입 정의가 이 파일 또는 전역 types 파일에 있어야 합니다.
+// 예시 타입 정의 (실제 프로젝트의 타입 정의와 일치시켜야 합니다)
+interface Player {
+  id: string;
+  name: string;
+}
 
-export interface MatchResultModalProps {
-  matchId: number;
+interface MatchWithPlayers {
+  id: string;
+  date: string; // 또는 Date
+  location: string;
+  winnerTeam: "A" | "B";
+  teamAScore: number;
+  teamBScore: number;
+  teamAPlayers: Player[];
+  teamBPlayers: Player[];
+}
+
+interface MatchResultModalProps {
   isOpen: boolean;
   onClose: () => void;
+  selectedMatch: MatchWithPlayers | null;
 }
 
-export default function MatchResultModal({ matchId, isOpen, onClose }: MatchResultModalProps) {
-  const { data: matchData, isLoading, error } = useMatchById(matchId);
+const MatchResultModal = ({
+  isOpen,
+  onClose,
+  selectedMatch,
+}: MatchResultModalProps) => {
+  if (!selectedMatch) return null;
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error instanceof Error ? error.message : "An error occurred"}</div>;
-  
-  // 데이터와 그 안의 모든 필수 속성이 완벽하게 존재하는지 최종 확인합니다.
-  if (!matchData || !matchData.match || !matchData.player1 || !matchData.player2) {
-    return null;
-  }
+  // selectedMatch 객체에서 직접 속성에 접근합니다.
+  const winnerTeamName =
+    selectedMatch.winnerTeam === "A" ? "A팀" : "B팀";
 
-  // 이제 matchData 객체에서 직접 속성을 꺼내 사용합니다.
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Match Result</DialogTitle>
-        </DialogHeader>
-        <div className="mt-4 flex justify-around items-center">
-          <div className="text-center">
-            <img src={getAvatarSrc(matchData.player1.avatarUrl, matchData.player1)} alt={matchData.player1.username || ''} className="w-20 h-20 rounded-full mx-auto" />
-            <p className="font-bold mt-2">{matchData.player1.username}</p>
-            <p>{matchData.match.result === 'player1_wins' ? 'Winner' : ''}</p>
-          </div>
-          <div className="text-xl font-bold">VS</div>
-          <div className="text-center">
-            <img src={getAvatarSrc(matchData.player2.avatarUrl, matchData.player2)} alt={matchData.player2.username || ''} className="w-20 h-20 rounded-full mx-auto" />
-            <p className="font-bold mt-2">{matchData.player2.username}</p>
-            <p>{matchData.match.result === 'player2_wins' ? 'Winner' : ''}</p>
-          </div>
-        </div>
-        <div className="text-center mt-4">
-          <p>ELO Change: {matchData.match.eloChange}</p>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Modal isOpen={isOpen} onClose={onClose}>
+      <ModalContent>
+        <>
+          <ModalHeader className="flex flex-col gap-1">
+            경기 결과
+          </ModalHeader>
+          <ModalBody>
+            <div>
+              <h3 className="font-bold">경기 정보</h3>
+              <p>날짜: {new Date(selectedMatch.date).toLocaleDateString()}</p>
+              <p>장소: {selectedMatch.location}</p>
+            </div>
+            <div className="mt-4">
+              <h3 className="font-bold">승리 팀: {winnerTeamName}</h3>
+              <p>
+                스코어: {selectedMatch.teamAScore} : {selectedMatch.teamBScore}
+              </p>
+            </div>
+            <div className="mt-4">
+              <h3 className="font-bold">참가 선수</h3>
+              <div>
+                <strong>A팀:</strong>
+                <p>{selectedMatch.teamAPlayers.map((p) => p.name).join(", ")}</p>
+              </div>
+              <div className="mt-2">
+                <strong>B팀:</strong>
+                <p>{selectedMatch.teamBPlayers.map((p) => p.name).join(", ")}</p>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="danger" variant="light" onPress={onClose}>
+              닫기
+            </Button>
+          </ModalFooter>
+        </>
+      </ModalContent>
+    </Modal>
   );
-}
+};
+
+export default MatchResultModal;
+
