@@ -1,62 +1,80 @@
-import { Router, Response } from "express";
-import { ensureAuthenticated } from "./middleware/auth";
-import { AuthenticatedRequest } from "./types"; // FIX: 정의된 타입 import
+import { Router, Request, Response } from 'express';
+import { db } from './firebase-admin';
+import { authenticate } from './middleware/auth';
+import { calculateElo } from './elo-calculator';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const router = Router();
 
-// Firebase Admin 초기화 (주석 처리됨)
-// import { admin } from "./firebase-admin";
-
-// 인증 테스트용 미들웨어 (실제 사용 시엔 불필요)
-router.use((req, res, next) => {
-  // console.log("Request to:", req.originalUrl);
-  next();
+// Endpoint to get user data
+router.get('/user', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    const userId = req.user.uid;
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(userDoc.data());
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-// POST /api/matches
-router.post(
-  "/matches",
-  ensureAuthenticated,
-  async (req: AuthenticatedRequest, res: Response) => { // FIX: AuthenticatedRequest 타입 사용
-    try {
-      const userId = req.user.uid;
-      const matchData = req.body;
-      
-      // 실제 데이터베이스 로직 추가
-      console.log(`Match creation request by user: ${userId}`, matchData);
-
-      res.status(201).json({ message: "Match created successfully", match: matchData });
-    } catch (error) {
-      console.error("Failed to create match:", error);
-      res.status(500).json({ error: "Server error while creating match" });
+// Endpoint to record a match
+router.post('/matches', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
+    const { opponentId, result } = req.body;
+    const userId = req.user.uid;
+
+    const userDocRef = db.collection('users').doc(userId);
+    const opponentDocRef = db.collection('users').doc(opponentId);
+
+    const [userDoc, opponentDoc] = await Promise.all([userDocRef.get(), opponentDocRef.get()]);
+
+
+    if (!userDoc.exists || !opponentDoc.exists) {
+      return res.status(404).json({ error: 'User or opponent not found' });
+    }
+
+    const userData = userDoc.data();
+    const opponentData = opponentDoc.data();
+
+    if (!userData || !opponentData) {
+        return res.status(404).json({ error: 'User data or opponent data is missing.' });
+    }
+
+    const userElo = userData.elo || 1200;
+    const opponentElo = opponentData.elo || 1200;
+
+    const { newWinnerElo, newLoserElo } = calculateElo(userElo, opponentElo, result);
+
+    const matchData = {
+      userId,
+      opponentId,
+      result,
+      userEloBefore: userElo,
+      opponentEloBefore: opponentElo,
+      userEloAfter: result === 'win' ? newWinnerElo : newLoserElo,
+      opponentEloAfter: result === 'win' ? newLoserElo : newWinnerElo,
+      timestamp: FieldValue.serverTimestamp(),
+    };
+
+    await db.collection('matches').add(matchData);
+    await userDocRef.update({ elo: matchData.userEloAfter });
+    await opponentDocRef.update({ elo: matchData.opponentEloAfter });
+
+    res.status(201).json({ message: 'Match recorded successfully', matchData });
+  } catch (error) {
+    console.error('Error recording match:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-);
-
-// GET /api/my-matches
-router.get(
-    "/my-matches",
-    ensureAuthenticated,
-    async (req: AuthenticatedRequest, res: Response) => { // FIX: AuthenticatedRequest 타입 사용
-        try {
-            const userId = req.user.uid;
-            
-            // 실제 데이터베이스 로직 추가
-            console.log(`Fetching matches for user: ${userId}`);
-
-            // 임시 데이터 응답
-            const mockMatches = [
-                { id: 1, opponent: "Player A", result: "Win" },
-                { id: 2, opponent: "Player B", result: "Loss" }
-            ];
-
-            res.status(200).json({ matches: mockMatches });
-        } catch (error) {
-            console.error('Failed to fetch matches:', error);
-            res.status(500).json({ error: 'Failed to fetch matches' });
-        }
-    }
-);
+});
 
 export default router;
-
