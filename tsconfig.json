@@ -15,15 +15,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    // --- VERCEL FIX START ---
     "baseUrl": ".",
     "paths": {
-      "@/*": ["client/src/*"],
-      "@shared/*": ["shared/*"]
+      "@/*": ["client/src/*"]
     }
-    // --- VERCEL FIX END ---
   },
-  "include": ["client/src", "shared", "api", "types"],
+  "include": ["client/src", "api", "server", "shared", "types"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
-
