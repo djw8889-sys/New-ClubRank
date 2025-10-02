@@ -10,7 +10,7 @@ const authenticate = async (req: Request, res: Response, next: NextFunction) => 
 
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
-    req.user = decodedToken; // 전역으로 확장된 Request 타입에 user 할당
+    req.user = decodedToken;
     next();
   } catch (error) {
     console.error('Error verifying token:', error);
@@ -18,4 +18,4 @@ const authenticate = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
-export default authenticate; // 'export { authenticate }' 대신 default export 사용
+export default authenticate;
