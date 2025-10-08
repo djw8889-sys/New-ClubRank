@@ -1,17 +1,36 @@
-import express from 'express';
-import mainRouter from './routes';
-import clubsRouter from './routes/clubs'; // FIX: default export로 가져오도록 유지
-import rankingsRouter from './routes/rankings';
+import express from "express";
+import cors from "cors";
+
+import mainRouter from "./routes";
+import clubsRouter from "./routes/clubs";
+import rankingsRouter from "./routes/rankings";
 
 const app = express();
 
+// ✅ CORS 설정 (Vercel 배포용)
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ JSON 파서
 app.use(express.json());
 
-// 각 경로에 맞는 라우터를 등록합니다.
-app.use('/api', mainRouter);
-app.use('/api/clubs', clubsRouter);
-app.use('/api/rankings', rankingsRouter);
+// ✅ 라우터 연결
+app.use("/api", mainRouter);
+app.use("/api/clubs", clubsRouter);
+app.use("/api/rankings", rankingsRouter);
 
-// Vercel 배포를 위해 export default를 사용합니다.
+// ✅ 오류 핸들러
+app.use(
+  (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error("🔥 Server Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+);
+
+// ✅ 서버리스 함수용 export
 export default app;
-
