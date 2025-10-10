@@ -9,4 +9,4 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-export default db; // 'export { db }' 대신 default export 사용
+export default db;

@@ -1,27 +1,19 @@
-import path from "path"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
-  // 1. 빌드의 시작점을 'client' 폴더로 지정합니다.
-  root: 'client', 
   plugins: [react()],
+  root: "./client", // ✅ 프론트엔드 기준 폴더
+  base: "/",        // ✅ 라우터가 항상 "/" 기준으로 작동하도록 설정
   resolve: {
     alias: {
-      // 2. 경로 별명은 그대로 유지합니다.
-      "@": path.resolve(__dirname, "./client/src"),
-      "@shared": path.resolve(__dirname, "./shared"),
+      "@": path.resolve(__dirname, "client/src"),
+      "@shared": path.resolve(__dirname, "client/shared"),
     },
   },
-  server: {
-    proxy: {
-      "/api": "http://127.0.0.1:3000",
-    },
-  },
-  // 3. 빌드 결과물이 저장될 위치를 프로젝트 루트의 'dist' 폴더로 지정합니다.
   build: {
-    outDir: '../dist',
-    emptyOutDir: true, // outDir이 프로젝트 루트 밖에 있을 경우 경고를 없애고 해당 폴더를 비웁니다.
-  }
-})
-
+    outDir: "../dist",  // ✅ 빌드 결과가 루트의 dist/로 생성됨
+    emptyOutDir: true,
+  },
+});

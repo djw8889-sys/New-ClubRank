@@ -1,12 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MatchPointConnect</title>
+  </head>
+  <body>
+    <!-- ✅ React가 붙을 루트 DOM -->
+    <div id="root"></div>
 
-@layer base {
-  * {
-    @apply border-gray-200 dark:border-gray-700; /* ✅ 존재하는 클래스만 사용 */
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+    <!-- ✅ JS 엔트리 연결 -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
