@@ -3,15 +3,18 @@ import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  base: "/",
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"), // ✅ client/src 기준으로 인식됨
+      "@": path.resolve(__dirname, "src"),
+      "@shared": path.resolve(__dirname, "../shared"),
     },
   },
-  build: {
-    outDir: "dist",  // ✅ client 내부 dist 폴더 생성
-    emptyOutDir: true,
+build: {
+  outDir: "dist",
+  emptyOutDir: true,
+  rollupOptions: {
+    external: ["firebase/auth"], // ✅ 명시적으로 외부 모듈로 처리
   },
+},
 });
