@@ -13,8 +13,5 @@ export default defineConfig({
 build: {
   outDir: "dist",
   emptyOutDir: true,
-  rollupOptions: {
-    external: ["firebase/auth"], // ✅ 명시적으로 외부 모듈로 처리
-  },
 },
 });

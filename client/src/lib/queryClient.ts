@@ -1,9 +1,11 @@
+// ✅ 수정된 완성본 queryClient.ts
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getAuth } from "firebase/auth";         // ✅ Firebase 모듈식 import 방식
+import { auth } from "@/lib/firebase";           // ✅ 기존 firebase.ts의 auth 사용
 
-// Note: This app uses Firebase for all data operations
-// The apiRequest and getQueryFn functions are not currently used
-// but are kept for potential future API integration
-
+// -----------------------------
+//  공통 에러 처리 유틸 함수
+// -----------------------------
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -11,27 +13,24 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// -----------------------------
+//  API 요청 함수
+// -----------------------------
 export async function apiRequest(
   method: string,
   url: string,
-  data?: unknown | undefined,
+  data?: unknown | undefined
 ): Promise<Response> {
   try {
-    // Get Firebase ID token
+    // ✅ Firebase 인증 토큰 가져오기
     let idToken = null;
-    try {
-      const { getAuth } = await import('firebase/auth');
-      const auth = getAuth();
-      if (auth.currentUser) {
-        idToken = await auth.currentUser.getIdToken();
-      }
-    } catch (error) {
-      console.warn('Failed to get Firebase ID token:', error);
+    if (auth.currentUser) {
+      idToken = await auth.currentUser.getIdToken();
     }
 
     const headers: Record<string, string> = {
       ...(data ? { "Content-Type": "application/json" } : {}),
-      ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}),
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
     };
 
     const res = await fetch(url, {
@@ -45,69 +44,33 @@ export async function apiRequest(
     return res;
   } catch (error) {
     if (error instanceof TypeError) {
-      // Network error (server down, no internet, etc.)
-      throw new Error(`Network error: Unable to connect to server. Please check your connection.`);
+      throw new Error(
+        "Network error: Unable to connect to the server. Please check your connection."
+      );
     }
-    // Re-throw other errors (like HTTP errors from throwIfResNotOk)
     throw error;
   }
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
-export const getQueryFn: <T>(options: {
-  on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    try {
-      // Get Firebase ID token for authentication
-      let idToken = null;
-      try {
-        const { getAuth } = await import('firebase/auth');
-        const auth = getAuth();
-        if (auth.currentUser) {
-          idToken = await auth.currentUser.getIdToken();
-        }
-      } catch (error) {
-        console.warn('Failed to get Firebase ID token for query:', error);
-      }
-
-      const headers: Record<string, string> = {
-        ...(idToken ? { "Authorization": `Bearer ${idToken}` } : {}),
-      };
-
-      const res = await fetch(queryKey.join("/") as string, {
-        headers,
-        credentials: "include",
-      });
-
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        return null;
-      }
-
-      await throwIfResNotOk(res);
-      return await res.json();
-    } catch (error) {
-      if (error instanceof TypeError) {
-        // Network error (server down, no internet, etc.)
-        throw new Error(`Network error: Unable to connect to server. Please check your connection.`);
-      }
-      // Re-throw other errors (like HTTP errors from throwIfResNotOk)
-      throw error;
-    }
-  };
-
+// -----------------------------
+//  React Query 클라이언트
+// -----------------------------
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
+      retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
     },
   },
 });
+
+// -----------------------------
+//  Query 요청 유틸
+// -----------------------------
+export const getQueryFn: QueryFunction = async ({ queryKey }) => {
+  const [url] = queryKey as [string];
+  const res = await fetch(url);
+
+  await throwIfResNotOk(res);
+  return res.json();
+};
