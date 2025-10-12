@@ -15,7 +15,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { addDocument } = useFirestore();
-  const { appUser } = useAuth();
+  const { user, profile } = useAuth(); // 'appUser'를 'user'와 'profile'로 변경
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +29,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       return;
     }
 
-    if (!appUser) {
+    if (!user || !profile) { // 'appUser'를 'user'와 'profile'로 변경
       toast({
         title: "로그인이 필요합니다",
         description: "피드백을 제출하려면 로그인해주세요.",
@@ -41,8 +41,8 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     setLoading(true);
     try {
       await addDocument('feedback', {
-        userId: appUser.id,
-        username: appUser.username,
+        userId: user.uid, // 'appUser.id'를 'user.uid'로 변경
+        username: profile.username, // 'appUser.username'을 'profile.username'으로 변경
         category,
         content: feedback,
         status: 'new'
@@ -115,6 +115,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
               rows={4}
               className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
               data-testid="textarea-feedback-content"
+              maxLength={500}
             />
             <div className="text-xs text-gray-500 mt-1">
               {feedback.length}/500

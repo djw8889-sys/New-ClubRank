@@ -43,7 +43,7 @@ module.exports = {
         },
       },
       borderColor: {
-        border: "hsl(var(--border))", // ✅ border-border 클래스 추가
+        border: "hsl(var(--border))", // ✅ border-border 클래스 적용
       },
       borderRadius: {
         lg: "var(--radius)",

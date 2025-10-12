@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,7 +42,6 @@ interface ClubMember {
 interface BracketGeneratorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  clubId: number;
   members: ClubMember[];
 }
 
@@ -78,7 +76,7 @@ const GENDER_LABELS = {
   mixed: "혼성"
 };
 
-export default function BracketGeneratorModal({ isOpen, onClose, clubId, members }: BracketGeneratorModalProps) {
+export default function BracketGeneratorModal({ isOpen, onClose, members }: BracketGeneratorModalProps) {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedMatches, setGeneratedMatches] = useState<GeneratedMatch[]>([]);
@@ -131,7 +129,6 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
     try {
       setIsGenerating(true);
       
-      // 대진표 생성 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const matches = generateRandomBracket(data.selectedMembers, data.playersPerCourt);
@@ -162,7 +159,7 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
     onClose();
   };
 
-  const estimatedCourts = Math.floor(selectedMembers.length / playersPerCourt);
+  const estimatedCourts = playersPerCourt > 0 ? Math.floor(selectedMembers.length / playersPerCourt) : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -180,7 +177,6 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
         {!showResults ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* 경기 설정 */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">경기 설정</h3>
                 
@@ -193,8 +189,8 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
                         <FormLabel>코트당 인원</FormLabel>
                         <FormControl>
                           <Select
-                            value={field.value.toString()}
-                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            value={String(field.value)}
+                            onValueChange={(value) => field.onChange(Number(value))}
                           >
                             <SelectTrigger data-testid="select-players-per-court">
                               <SelectValue />
@@ -263,7 +259,6 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
                 />
               </div>
 
-              {/* 참석자 선택 */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-lg">참석자 선택</h3>
@@ -280,7 +275,7 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
                     >
                       <Checkbox
                         checked={selectedMembers.includes(member.id)}
-                        onCheckedChange={(checked) => handleMemberToggle(member.id, checked as boolean)}
+                        onCheckedChange={(checked) => handleMemberToggle(member.id, !!checked)}
                         data-testid={`checkbox-member-${member.id}`}
                       />
                       <div className="flex-1">
@@ -318,7 +313,6 @@ export default function BracketGeneratorModal({ isOpen, onClose, clubId, members
             </form>
           </Form>
         ) : (
-          /* 생성된 대진표 결과 */
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-2">🎉 대진표 생성 완료!</h3>

@@ -7,15 +7,13 @@ import {
   onSnapshot, 
   addDoc, 
   updateDoc, 
-  doc, 
-  getDocs,
+  doc,
   DocumentData,
   QuerySnapshot,
   serverTimestamp,
   Timestamp,
   increment,
-  runTransaction,
-  getDoc
+  runTransaction
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
@@ -160,20 +158,11 @@ export function useFirestore() {
         
         if (!targetUserDoc.exists()) throw new Error("Target user not found");
         
-        // Test version: No point requirements
-        // const targetUser = targetUserDoc.data();
-        // if (targetUser.points < match.pointsCost) throw new Error("Insufficient points");
-        
         // Accept match - no points deducted in test version
         transaction.update(matchRef, {
           status: 'accepted',
           acceptedAt: serverTimestamp(),
         });
-        
-        // Test version: No point deduction
-        // transaction.update(targetUserRef, {
-        //   points: increment(-match.pointsCost),
-        // });
       });
     } catch (error) {
       console.error("Error accepting match:", error);
@@ -197,17 +186,11 @@ export function useFirestore() {
         if (user.uid !== match.targetId) throw new Error("Unauthorized: Only match target can reject");
         if (match.status !== 'pending') throw new Error("Match is not pending");
         
-        // Reject match and refund requester
+        // Reject match
         transaction.update(matchRef, {
           status: 'rejected',
           rejectedAt: serverTimestamp(),
         });
-        
-        // Test version: No points were deducted, so no refund needed
-        // const requesterRef = doc(db, 'users', match.requesterId);
-        // transaction.update(requesterRef, {
-        //   points: increment(match.pointsCost), // Refund the original cost
-        // });
       });
     } catch (error) {
       console.error("Error rejecting match:", error);
@@ -227,7 +210,6 @@ export function useFirestore() {
         
         const match = matchDoc.data();
         
-        // Verify caller is a participant using IDs from matchDoc
         if (user.uid !== match.requesterId && user.uid !== match.targetId) {
           throw new Error("Unauthorized: Only match participants can complete match");
         }
@@ -235,11 +217,9 @@ export function useFirestore() {
         if (match.status === 'completed') throw new Error("Match already completed");
         if (match.status !== 'accepted') throw new Error("Match must be accepted first");
         
-        // Use participant IDs from matchDoc (source of truth)
         const requesterRef = doc(db, 'users', match.requesterId);
         const targetRef = doc(db, 'users', match.targetId);
         
-        // Update match with result
         transaction.update(matchRef, {
           status: 'completed',
           result: result,
@@ -247,29 +227,23 @@ export function useFirestore() {
           completedBy: user.uid,
         });
 
-        // Update user stats based on result
         if (result === 'requester_won') {
-          // Winner gets full refund + bonus points + 1 win
           transaction.update(requesterRef, {
-            points: increment(25), // Test version: just +25P bonus
+            points: increment(25),
             wins: increment(1),
           });
-          // Loser gets +1 loss
           transaction.update(targetRef, {
             losses: increment(1),
           });
         } else if (result === 'target_won') {
-          // Winner gets full refund + bonus points + 1 win
           transaction.update(targetRef, {
-            points: increment(25), // Test version: just +25P bonus
+            points: increment(25),
             wins: increment(1),
           });
-          // Loser gets +1 loss
           transaction.update(requesterRef, {
             losses: increment(1),
           });
         } else if (result === 'draw') {
-          // Draw: Both get full refund
           const drawRefund = 50;
           transaction.update(requesterRef, {
             points: increment(drawRefund),
@@ -300,10 +274,8 @@ export function useFirestore() {
         
         let newLikes;
         if (currentLikes.includes(user.uid)) {
-          // Remove like
           newLikes = currentLikes.filter((id: string) => id !== user.uid);
         } else {
-          // Add like
           newLikes = [...currentLikes, user.uid];
         }
         
@@ -332,7 +304,7 @@ export function useFirestore() {
         const currentComments = post.comments || [];
         
         const newComment = {
-          id: Date.now().toString(), // Simple ID generation
+          id: Date.now().toString(),
           authorId: user.uid,
           content: content.trim(),
           createdAt: serverTimestamp(),
@@ -351,6 +323,35 @@ export function useFirestore() {
     }
   };
 
+  async function requestMatch(requesterId: string, targetId: string) {
+    if (!user) throw new Error("User not authenticated");
+    if (user.uid !== requesterId) throw new Error("Unauthorized: Only requester can create match");
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const requesterRef = doc(db, 'users', requesterId);
+        const requesterDoc = await transaction.get(requesterRef);
+        
+        if (!requesterDoc.exists()) throw new Error("Requester not found");
+        
+        const matchRef = doc(collection(db, 'matches'));
+        transaction.set(matchRef, {
+          id: matchRef.id,
+          requesterId,
+          targetId,
+          status: 'pending',
+          pointsCost: 0,
+          isReviewed: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+    } catch (error) {
+      console.error("Error requesting match:", error);
+      throw error;
+    }
+  }
+
   return {
     addDocument,
     updateDocument,
@@ -363,39 +364,4 @@ export function useFirestore() {
     toggleLike,
     addComment,
   };
-
-  async function requestMatch(requesterId: string, targetId: string, pointsCost: number = 0) {
-    if (!user) throw new Error("User not authenticated");
-    if (user.uid !== requesterId) throw new Error("Unauthorized: Only requester can create match");
-
-    try {
-      await runTransaction(db, async (transaction) => {
-        const requesterRef = doc(db, 'users', requesterId);
-        const requesterDoc = await transaction.get(requesterRef);
-        
-        if (!requesterDoc.exists()) throw new Error("Requester not found");
-        
-        // Test version: No points required or deducted
-        const matchRef = doc(collection(db, 'matches'));
-        transaction.set(matchRef, {
-          id: matchRef.id,
-          requesterId,
-          targetId,
-          status: 'pending',
-          pointsCost: 0, // Test version: free matches
-          isReviewed: false, // 기본값: 리뷰 미완료
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-        
-        // Test version: No point deduction
-        // transaction.update(requesterRef, {
-        //   points: increment(-pointsCost),
-        // });
-      });
-    } catch (error) {
-      console.error("Error requesting match:", error);
-      throw error;
-    }
-  }
 }

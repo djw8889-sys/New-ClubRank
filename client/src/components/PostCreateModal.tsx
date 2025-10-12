@@ -15,7 +15,7 @@ interface PostCreateModalProps {
 }
 
 export default function PostCreateModal({ isOpen, onClose, onPostCreated }: PostCreateModalProps) {
-  const { appUser } = useAuth();
+  const { user } = useAuth(); // appUser 대신 user를 사용합니다.
   const { addDocument } = useFirestore();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -35,12 +35,12 @@ export default function PostCreateModal({ isOpen, onClose, onPostCreated }: Post
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!appUser || !formData.title.trim() || !formData.content.trim()) return;
+    if (!user || !formData.title.trim() || !formData.content.trim()) return;
 
     setLoading(true);
     try {
       await addDocument('posts', {
-        authorId: appUser.id,
+        authorId: user.uid, // user.id 대신 user.uid를 사용합니다.
         title: formData.title.trim(),
         content: formData.content.trim(),
         likes: [],

@@ -15,21 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import LoadingSpinner from "./LoadingSpinner";
 
-interface ClubMember {
-  id: number;
-  userId: string;
-  clubId: number;
-  role: 'owner' | 'admin' | 'member';
-  joinedAt: Date;
-  isActive: boolean;
-}
-
 interface ClubAnalyticsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  clubId: number;
   clubName: string;
-  members: ClubMember[];
 }
 
 // 모의 데이터 - 실제로는 API에서 가져올 데이터
@@ -106,7 +95,7 @@ const GAME_FORMAT_LABELS = {
   mixed_doubles: "혼합 복식"
 };
 
-export default function ClubAnalyticsModal({ isOpen, onClose, clubId, clubName, members }: ClubAnalyticsModalProps) {
+export default function ClubAnalyticsModal({ isOpen, onClose, clubName }: ClubAnalyticsModalProps) {
   const [activeTab, setActiveTab] = useState("rankings");
   const [isLoading] = useState(false);
 
@@ -133,7 +122,6 @@ export default function ClubAnalyticsModal({ isOpen, onClose, clubId, clubName, 
             </TabsTrigger>
           </TabsList>
 
-          {/* 개인 랭킹 탭 */}
           <TabsContent value="rankings" className="space-y-6">
             <div className="text-sm text-muted-foreground">
               클럽 내 개인별 승률과 포인트를 기준으로 한 랭킹입니다.
@@ -191,13 +179,11 @@ export default function ClubAnalyticsModal({ isOpen, onClose, clubId, clubName, 
             )}
           </TabsContent>
 
-          {/* 경기별 전적 탭 */}
           <TabsContent value="matches" className="space-y-6">
             <div className="text-sm text-muted-foreground">
               다른 클럽과의 교류전 기록과 상세 결과입니다.
             </div>
             
-            {/* 전체 통계 요약 */}
             <div className="grid grid-cols-4 gap-4">
               <div className="bg-muted rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-primary">12</div>
@@ -260,7 +246,6 @@ export default function ClubAnalyticsModal({ isOpen, onClose, clubId, clubName, 
             </div>
           </TabsContent>
 
-          {/* 파트너 궁합 탭 */}
           <TabsContent value="partners" className="space-y-6">
             <div className="text-sm text-muted-foreground">
               복식 경기에서 함께 뛴 파트너들 간의 궁합도를 분석합니다.

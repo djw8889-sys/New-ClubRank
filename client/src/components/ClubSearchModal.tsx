@@ -16,19 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "./LoadingSpinner";
+import { Club } from "@shared/schema";
 
-interface Club {
-  id: number;
-  name: string;
-  description: string | null;
-  region: string;
-  primaryColor: string | null;
-  rankingPoints: number | null;
+interface ClubForSearch extends Club {
   memberCount: number;
-  establishedAt: Date | null;
 }
+
 
 interface ClubSearchModalProps {
   isOpen: boolean;
@@ -49,9 +43,9 @@ export default function ClubSearchModal({ isOpen, onClose }: ClubSearchModalProp
 
   const { data: clubs = [], isLoading, isError } = useClubSearch(selectedRegion);
 
-  const handleJoinClub = async (club: Club) => {
+  const handleJoinClub = async (club: ClubForSearch) => {
     try {
-      await joinClubMutation.mutateAsync(club.id);
+      await joinClubMutation.mutateAsync({ clubId: club.id });
       
       toast({
         title: "클럽 가입 완료",
@@ -67,6 +61,9 @@ export default function ClubSearchModal({ isOpen, onClose }: ClubSearchModalProp
       });
     }
   };
+
+  const clubsWithMemberCount: ClubForSearch[] = clubs.map(c => ({...c, memberCount: 10}));
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -98,7 +95,6 @@ export default function ClubSearchModal({ isOpen, onClose }: ClubSearchModalProp
             </Select>
           </div>
 
-          {/* 클럽 목록 */}
           <div className="space-y-3">
             {!selectedRegion ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -113,7 +109,7 @@ export default function ClubSearchModal({ isOpen, onClose }: ClubSearchModalProp
               <div className="text-center py-8 text-destructive">
                 클럽 검색 중 오류가 발생했습니다
               </div>
-            ) : clubs.length === 0 ? (
+            ) : clubsWithMemberCount.length === 0 ? (
               <div className="text-center py-8">
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <i className="fas fa-search text-2xl text-muted-foreground" />
@@ -126,7 +122,7 @@ export default function ClubSearchModal({ isOpen, onClose }: ClubSearchModalProp
                 </p>
               </div>
             ) : (
-              clubs.map((club) => (
+              clubsWithMemberCount.map((club) => (
                 <div 
                   key={club.id}
                   className="bg-background border border-border rounded-lg p-4 hover:shadow-md transition-shadow"

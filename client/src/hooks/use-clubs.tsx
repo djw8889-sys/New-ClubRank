@@ -1,175 +1,95 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "./use-auth";
+import { Club, NewClub, ClubMember, User } from "@shared/schema";
 
-// Define types for club-related data
-interface ClubMembership {
-  membership: {
-    id: number;
-    userId: string;
-    clubId: number;
-    role: 'owner' | 'admin' | 'member';
-    joinedAt: Date;
-    isActive: boolean;
-  };
-  club: {
-    id: number;
-    name: string;
-    logoUrl: string | null;
-    bannerUrl: string | null;
-    description: string | null;
-    primaryColor: string | null;
-    rankingPoints: number | null;
-    region: string;
-    establishedAt: Date | null;
-  };
+async function fetcher(url: string, options?: RequestInit) {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const errorBody = await res.json();
+    throw new Error(errorBody.message || "An error occurred");
+  }
+  return res.json();
 }
 
-interface ClubSearchResult {
-  id: number;
-  name: string;
-  description: string | null;
-  region: string;
-  primaryColor: string | null;
-  rankingPoints: number | null;
-  memberCount: number;
-  establishedAt: Date | null;
-}
-
-interface ClubMember {
-  id: number;
-  userId: string;
-  clubId: number;
-  role: 'owner' | 'admin' | 'member';
-  joinedAt: Date;
-  isActive: boolean;
-}
-
-// Club membership hook
-export function useMyClubMembership() {
-  return useQuery<ClubMembership[]>({
-    queryKey: ['/api/clubs/my-membership'],
+// Hook to get the current user's club memberships
+export function useClubs() {
+  const { user } = useAuth();
+  return useQuery<{ club: Club; role: string }[], Error>({
+    queryKey: ["clubs", "membership"],
+    queryFn: () => fetcher("/api/clubs/my-membership"),
+    enabled: !!user,
   });
 }
 
-// Club search hook
-export function useClubSearch(region: string) {
-  return useQuery<ClubSearchResult[]>({
-    queryKey: [`/api/clubs/search?region=${encodeURIComponent(region)}`],
-    enabled: !!region,
+// Hook to get a list of all clubs (or search)
+export function useClubSearch(searchTerm: string = "") {
+  return useQuery<Club[], Error>({
+    queryKey: ["clubs", "search", searchTerm],
+    queryFn: () => fetcher(`/api/clubs?search=${searchTerm}`),
   });
 }
 
-// Club members hook
-export function useClubMembers(clubId: number) {
-  return useQuery<ClubMember[]>({
-    queryKey: ['/api/clubs', clubId, 'members'],
+// Hook to get members of a specific club
+export function useClubMembers(clubId: number | null) {
+  return useQuery< (User & { member: { role: string; joinedAt: string } })[], Error>({
+    queryKey: ["clubs", "members", clubId],
+    queryFn: () => fetcher(`/api/clubs/${clubId}/members`),
     enabled: !!clubId,
   });
 }
 
-// Club matches hook
-export function useClubMatches(clubId: number) {
-  return useQuery({
-    queryKey: ['/api/clubs', clubId, 'matches'],
-    enabled: !!clubId,
-  });
-}
-
-// Create club mutation
+// Hook to create a new club
 export function useCreateClub() {
-  return useMutation({
-    mutationFn: async (clubData: {
-      name: string;
-      region: string;
-      description?: string;
-      logoUrl?: string;
-      bannerUrl?: string;
-      primaryColor?: string;
-    }) => {
-      const response = await apiRequest('POST', '/api/clubs', clubData);
-      return response.json();
+  const queryClient = useQueryClient();
+  const { profile } = useAuth();
+  return useMutation<Club, Error, Omit<NewClub, 'ownerId' | 'createdAt'>>({
+    mutationFn: (newClubData) => {
+        if (!profile) throw new Error("You must be logged in to create a club.");
+        const newClub: NewClub = {
+            ...newClubData,
+            ownerId: profile.id,
+            createdAt: new Date(),
+        }
+        return fetcher("/api/clubs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(newClub),
+        });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs/my-membership'] });
+      queryClient.invalidateQueries({ queryKey: ["clubs"] });
     },
   });
 }
 
-// Join club mutation
+
+// Hook to join a club
 export function useJoinClub() {
-  return useMutation({
-    mutationFn: async (clubId: number) => {
-      const response = await apiRequest('POST', `/api/clubs/${clubId}/join`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs/my-membership'] });
-    },
-  });
+    const queryClient = useQueryClient();
+    return useMutation<ClubMember, Error, { clubId: number }>({
+        mutationFn: ({ clubId }) =>
+            fetcher(`/api/clubs/${clubId}/join`, {
+                method: 'POST',
+            }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['clubs', 'membership'] });
+            queryClient.invalidateQueries({ queryKey: ['clubs', 'members', data.clubId] });
+        },
+    });
 }
 
-// Leave club mutation
+// Hook to leave a club
 export function useLeaveClub() {
-  return useMutation({
-    mutationFn: async (clubId: number) => {
-      const response = await apiRequest('DELETE', `/api/clubs/${clubId}/leave`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs/my-membership'] });
-    },
-  });
-}
-
-// Create club match mutation
-export function useCreateClubMatch() {
-  return useMutation({
-    mutationFn: async ({ clubId, matchData }: {
-      clubId: number;
-      matchData: {
-        receivingClubId: number;
-        matchDate?: Date;
-        matchLocation?: string;
-        matchType?: 'friendly' | 'tournament' | 'league';
-        notes?: string;
-      };
-    }) => {
-      const response = await apiRequest('POST', `/api/clubs/${clubId}/matches`, matchData);
-      return response.json();
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/clubs', variables.clubId, 'matches'] 
-      });
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, { clubId: number }>({
+    mutationFn: ({ clubId }) =>
+      fetcher(`/api/clubs/${clubId}/leave`, {
+        method: "POST",
+      }),
+    onSuccess: (_, { clubId }) => {
+      queryClient.invalidateQueries({ queryKey: ["clubs", "membership"] });
+      queryClient.invalidateQueries({ queryKey: ["clubs", "members", clubId] });
     },
   });
 }
 
-// Update member role mutation
-export function useUpdateMemberRole() {
-  return useMutation({
-    mutationFn: async ({ memberId, role }: {
-      memberId: number;
-      role: 'owner' | 'admin' | 'member';
-    }) => {
-      const response = await apiRequest('PATCH', `/api/clubs/members/${memberId}/role`, { role });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs'] });
-    },
-  });
-}
-
-// Remove member mutation
-export function useRemoveMember() {
-  return useMutation({
-    mutationFn: async (memberId: number) => {
-      const response = await apiRequest('DELETE', `/api/clubs/members/${memberId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/clubs'] });
-    },
-  });
-}

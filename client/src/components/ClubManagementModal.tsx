@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { Club } from "@shared/schema";
 import {
   Dialog,
   DialogContent,
@@ -29,26 +30,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import LoadingSpinner from "./LoadingSpinner";
 
+// MainApp.tsx's ClubMembership type
 interface ClubMembership {
-  membership: {
-    id: number;
-    userId: string;
-    clubId: number;
-    role: 'owner' | 'admin' | 'member';
-    joinedAt: Date;
-    isActive: boolean;
-  };
-  club: {
-    id: number;
-    name: string;
-    logoUrl: string | null;
-    bannerUrl: string | null;
-    description: string | null;
-    primaryColor: string | null;
-    rankingPoints: number | null;
-    region: string;
-    establishedAt: Date | null;
-  };
+  club: Club;
+  role: 'owner' | 'admin' | 'member';
 }
 
 interface ClubManagementModalProps {
@@ -83,10 +68,11 @@ export default function ClubManagementModal({ isOpen, onClose, membership }: Clu
     },
   });
 
-  const onSubmitSettings = async (data: ClubSettingsFormData) => {
+  const onSubmitSettings = async (formData: ClubSettingsFormData) => {
     try {
       setIsUpdating(true);
       
+      console.log("Updating club settings:", formData);
       // TODO: API 연동 구현
       await new Promise(resolve => setTimeout(resolve, 1000)); // 임시 지연
       

@@ -1,14 +1,21 @@
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { User } from '@shared/schema';
-import { getAvatarSrc } from '@/utils/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { getAvatarSrc } from "@/utils/avatar";
+import { calculateTier } from "@/utils/tierCalculator";
+import { User } from "@shared/schema";
 
 interface MatchRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  targetUser: User | null;
+  targetUser: User;
   currentUserPoints: number;
   isLoading: boolean;
 }
@@ -19,125 +26,75 @@ export default function MatchRequestModal({
   onConfirm,
   targetUser,
   currentUserPoints,
-  isLoading
+  isLoading,
 }: MatchRequestModalProps) {
-  const matchCost = 0; // Test version: free matches
-  const hasEnoughPoints = currentUserPoints >= matchCost;
+  
+  const targetUserTier = calculateTier(targetUser.points ?? 0);
+  const currentUserTier = calculateTier(currentUserPoints);
+  
+  const eloDifference = Math.abs((targetUser.points ?? 0) - currentUserPoints);
+  const expectedWinRate = 1 / (1 + Math.pow(10, eloDifference / 400));
+  const pointsToWin = Math.round(32 * (1 - expectedWinRate));
+  const pointsToLose = Math.round(32 * expectedWinRate);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle data-testid="text-match-request-title">
-            매치 신청 확인
-          </DialogTitle>
-          <DialogDescription data-testid="text-match-request-description">
-            {targetUser ? (
-              <>
-                <strong>{targetUser.username}</strong>님에게 매치를 신청하시겠습니까?
-              </>
-            ) : (
-              "매치를 신청하시겠습니까?"
-            )}
+          <DialogTitle>대전 신청</DialogTitle>
+          <DialogDescription>
+            {targetUser.username}님에게 대전을 신청하시겠습니까?
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Player Info */}
-          {targetUser && (
-            <div className="flex items-center space-x-3 p-3 bg-muted rounded-lg">
-              <img 
-                src={getAvatarSrc(targetUser.photoURL, targetUser, 96)} 
-                alt={targetUser.username} 
-                className="w-12 h-12 rounded-full object-cover"
-                data-testid="img-target-user"
+        <div className="my-4 space-y-4">
+          <div className="flex items-center justify-around">
+            {/* Current User */}
+            <div className="flex flex-col items-center space-y-2">
+              <img
+                src={getAvatarSrc(null, {})}
+                alt="My Avatar"
+                className="w-20 h-20 rounded-full border-2 border-primary"
               />
-              <div>
-                <p className="font-semibold text-foreground" data-testid="text-target-username">
-                  {targetUser.username}
-                </p>
-                <p className="text-sm text-muted-foreground" data-testid="text-target-info">
-                  NTRP {targetUser.ntrp} • {targetUser.region}
-                </p>
-                <p className="text-xs text-muted-foreground" data-testid="text-target-record">
-                  {targetUser.wins}승 {targetUser.losses}패
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Cost Information */}
-          <div className="space-y-2 p-3 border rounded-lg">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">매치 신청 비용</span>
-              <span className="font-semibold text-green-600" data-testid="text-match-cost">
-                무료 (테스트 버전)
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">현재 보유 포인트</span>
-              <span className="font-semibold" data-testid="text-current-points">
-                {currentUserPoints}P
-              </span>
-            </div>
-            <div className="flex justify-between items-center pt-2 border-t">
-              <span className="text-sm text-muted-foreground">신청 후 포인트</span>
-              <span 
-                className={`font-semibold ${hasEnoughPoints ? 'text-primary' : 'text-destructive'}`}
-                data-testid="text-points-after"
-              >
-                {hasEnoughPoints ? currentUserPoints - matchCost : currentUserPoints}P
-              </span>
-            </div>
-          </div>
-
-          {/* Warning if insufficient points */}
-          {!hasEnoughPoints && (
-            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <p className="text-sm text-destructive" data-testid="text-insufficient-points">
-                포인트가 부족합니다. 매치 신청을 위해 {matchCost}P가 필요합니다.
+              <p className="font-semibold">나</p>
+              <p className="text-sm text-muted-foreground">
+                {currentUserTier.currentTier.name} - {currentUserPoints}P
               </p>
             </div>
-          )}
 
-          {/* Info about match flow */}
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>• 테스트 버전으로 매치 신청이 무료입니다</p>
-            <p>• 상대방이 수락해도 포인트가 차감되지 않습니다</p>
-            <p>• 승리 시 +25P 보너스를 받을 수 있습니다</p>
-            <p>• 무승부 시 각자 +25P를 받습니다</p>
+            <div className="text-2xl font-bold text-muted-foreground">VS</div>
+
+            {/* Target User */}
+            <div className="flex flex-col items-center space-y-2">
+              <img
+                src={getAvatarSrc(targetUser.avatarUrl, { id: targetUser.id, username: targetUser.username, email: targetUser.email })}
+                alt={targetUser.username || "Opponent's Avatar"}
+                className="w-20 h-20 rounded-full"
+              />
+              <p className="font-semibold">{targetUser.username}</p>
+              <p className="text-sm text-muted-foreground">
+                {targetUserTier.currentTier.name} - {targetUser.points ?? 0}P
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center bg-muted p-3 rounded-lg">
+            <p className="text-sm font-semibold">예상 ELO 변동</p>
+            <div className="flex justify-center space-x-4 mt-2">
+              <p className="text-sm text-green-600">승리 시: +{pointsToWin}P</p>
+              <p className="text-sm text-red-600">패배 시: -{pointsToLose}P</p>
+            </div>
           </div>
         </div>
 
-        <div className="flex space-x-2 pt-4">
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            className="flex-1"
-            disabled={isLoading}
-            data-testid="button-cancel-match"
-          >
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             취소
           </Button>
-          <Button 
-            onClick={onConfirm}
-            className="flex-1"
-            disabled={!hasEnoughPoints || isLoading}
-            data-testid="button-confirm-match"
-          >
-            {isLoading ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2" />
-                신청 중...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-tennis-ball mr-2" />
-                신청하기
-              </>
-            )}
+          <Button onClick={onConfirm} disabled={isLoading}>
+            {isLoading ? "신청 중..." : "신청하기"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
